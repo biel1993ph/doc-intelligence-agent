@@ -1,0 +1,6 @@
+langgraph
+gradio
+gitpython
+hypothesis
+pytest
+pytest-cov
