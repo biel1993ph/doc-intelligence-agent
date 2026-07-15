@@ -315,6 +315,11 @@ def _identify_issues(context: str, insufficient: bool) -> list[dict]:
     return issues[:15]
 
 
+# Problemas críticos: ausência de título, descrição, instalação
+CRITICAL_ISSUE_KEYWORDS = ["título", "descrição", "resumo", "instalação", "install"]
+MAX_SCORE_WITH_CRITICAL = 7
+
+
 def _calculate_score(
     context: str,
     dimensions: dict,
@@ -322,7 +327,14 @@ def _calculate_score(
     issues: list,
     insufficient: bool,
 ) -> tuple[int, str]:
-    """Calcula nota de 0-10 com justificativa (≥2 frases)."""
+    """Calcula nota de 0-10 com justificativa (≥2 frases).
+
+    Regras:
+    - Base insuficiente: nota máxima 3
+    - Problema crítico presente: nota máxima 7
+    - Problemas críticos: ausência de título, descrição, instalação
+    - Problemas menores: ausência de contributing, FAQ, exemplos avançados
+    """
     if insufficient:
         score = min(2, MAX_SCORE_INSUFFICIENT)
         justification = (
@@ -331,7 +343,19 @@ def _calculate_score(
         )
         return score, justification
 
-    # Calcular score baseado em dimensões e balanço fortes/problemas
+    # Classificar problemas em críticos e menores
+    critical_issues = []
+    minor_issues = []
+    for issue in issues:
+        obs = issue.get("observation", "").lower()
+        if any(kw in obs for kw in CRITICAL_ISSUE_KEYWORDS):
+            critical_issues.append(issue)
+        else:
+            minor_issues.append(issue)
+
+    has_critical = len(critical_issues) > 0
+
+    # Calcular score
     base_score = 5
     dim_values = list(dimensions.values())
 
@@ -339,17 +363,28 @@ def _calculate_score(
     positive_dims = ["adequada", "ampla", "consistente", "presente"]
     bonus = sum(1 for v in dim_values if v in positive_dims)
 
-    # Penalidade por problemas
-    penalty = min(len(issues), 4)
+    # Penalidade: críticos pesam 2, menores pesam 1
+    penalty = (len(critical_issues) * 2) + len(minor_issues)
+    penalty = min(penalty, 6)
 
     # Bonus por pontos fortes
     strength_bonus = min(len(strengths), 3)
 
     score = max(0, min(10, base_score + bonus + strength_bonus - penalty))
 
+    # Limitar nota se há problemas críticos
+    if has_critical:
+        score = min(score, MAX_SCORE_WITH_CRITICAL)
+
     justification = (
-        f"Avaliação baseada em {len(strengths)} pontos fortes e {len(issues)} problemas identificados. "
+        f"Avaliação baseada em {len(strengths)} pontos fortes e {len(issues)} problemas identificados "
+        f"({len(critical_issues)} críticos, {len(minor_issues)} menores). "
         f"As dimensões de clareza, cobertura, consistência e onboarding foram consideradas na composição da nota."
     )
+
+    if has_critical:
+        justification += (
+            f" A nota foi limitada a no máximo {MAX_SCORE_WITH_CRITICAL} devido a problemas críticos pendentes."
+        )
 
     return score, justification

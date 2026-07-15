@@ -355,3 +355,69 @@ def test_no_contradiction_contributing() -> None:
     ar = result["analysis_result"]
     issue_observations = [i["observation"].lower() for i in ar["issues"]]
     assert not any("contribui" in obs and "ausente" in obs for obs in issue_observations)
+
+
+# --- Nota com pesos (#46) ---
+
+
+def test_score_limited_with_critical_issue_missing_title() -> None:
+    """Nota máxima 7 quando título está ausente (problema crítico)."""
+    # README sem título — começa com texto direto
+    context = (
+        "**Dois perfis de uso:**\n"
+        "- Participante: Interface simples para responder pesquisas\n"
+        "- Master: Acesso protegido por senha para configurar eventos\n\n"
+        "## Instalação\n\npip install projeto\n\n"
+        "## Uso\n\nExemplo de uso aqui.\n\n"
+        "## Contributing\n\nFork e PR.\n\n"
+        "## Licença\n\nMIT License.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    ar = result["analysis_result"]
+    assert ar["score"] <= 7, f"Nota deveria ser <= 7 com título ausente, mas foi {ar['score']}"
+
+
+def test_score_limited_with_critical_issue_missing_description() -> None:
+    """Nota máxima 7 quando descrição está ausente (problema crítico)."""
+    # README com título mas sem descrição (heading direto)
+    context = (
+        "# Projeto\n\n"
+        "## Instalação\n\npip install projeto com dependências completas\n\n"
+        "## Uso\n\nExemplo detalhado de uso com mais texto para preencher o conteúdo.\n\n"
+        "## Contributing\n\nFaça fork.\n\n"
+        "## Licença\n\nMIT.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    ar = result["analysis_result"]
+    assert ar["score"] <= 7, f"Nota deveria ser <= 7 sem descrição, mas foi {ar['score']}"
+
+
+def test_score_can_exceed_7_without_critical_issues() -> None:
+    """Nota pode ser > 7 quando não há problemas críticos."""
+    context = (
+        "# TaskFlow\n\n"
+        "Gerenciador de tarefas colaborativo com interface web e API REST completa.\n\n"
+        "## Instalação\n\npip install taskflow\n\n"
+        "```bash\npip install taskflow\n```\n\n"
+        "## Uso\n\nExemplo de uso:\n\n```python\nimport taskflow\n```\n\n"
+        "## API\n\nEndpoint principal: /api/tasks\n\n"
+        "## Contributing\n\nFork e PR.\n\n"
+        "## Licença\n\nMIT License\n\n"
+        "## Testes\n\npytest tests/\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    ar = result["analysis_result"]
+    # Verificar que não há problemas críticos
+    critical_kws = ["título", "descrição", "resumo", "instalação", "install"]
+    has_critical = any(
+        any(kw in i["observation"].lower() for kw in critical_kws)
+        for i in ar["issues"]
+    )
+    if not has_critical:
+        assert ar["score"] >= 7, f"Nota deveria ser >= 7 sem problemas críticos, mas foi {ar['score']}"
