@@ -12,36 +12,45 @@ from app.services.sanitizer import sanitize_state
 TIMEOUT_SECONDS = 120
 
 
-def handle_submission(url: str, files: list | None) -> str:
+def handle_submission(url: str, local_path: str, files: list | None) -> str:
     """Callback de submissão: valida entrada e executa o agente.
 
-    Modos mutuamente exclusivos:
-    - URL preenchida e sem arquivos → analisa repositório
-    - Arquivos enviados e sem URL → analisa arquivos locais
-    - Ambos preenchidos ou ambos vazios → erro
+    Modos mutuamente exclusivos (apenas um deve ser preenchido):
+    - URL preenchida → analisa repositório remoto
+    - Caminho local preenchido → analisa repositório/diretório local
+    - Arquivos enviados → analisa arquivos Markdown enviados por upload
 
     Args:
         url: URL do repositório Git.
+        local_path: Caminho para repositório ou diretório local.
         files: Lista de arquivos .md enviados pelo upload.
 
     Returns:
         Relatório Markdown ou mensagem de erro.
     """
     has_url = bool(url and url.strip())
+    has_path = bool(local_path and local_path.strip())
     has_files = bool(files and len(files) > 0)
 
-    # Validação de modos mutuamente exclusivos
-    if has_url and has_files:
-        return "❌ **Erro:** Preencha apenas um campo — URL ou upload de arquivos, não ambos."
+    # Contagem de modos preenchidos
+    modes_filled = sum([has_url, has_path, has_files])
 
-    if not has_url and not has_files:
-        return "❌ **Erro:** Preencha pelo menos um campo — URL do repositório ou upload de arquivos."
+    if modes_filled == 0:
+        return "❌ **Erro:** Preencha pelo menos um campo — URL, caminho local ou upload de arquivos."
+
+    if modes_filled > 1:
+        return "❌ **Erro:** Preencha apenas um campo — URL, caminho local ou upload de arquivos."
 
     # Modo URL
     if has_url:
         raw_input = url.strip()
+
+    # Modo caminho local
+    elif has_path:
+        raw_input = local_path.strip()
+
+    # Modo upload de arquivos
     else:
-        # Modo arquivos: copiar para diretório temporário
         tmp_dir = tempfile.mkdtemp(prefix="doc_intel_upload_")
         for file_path in files:
             src = Path(file_path)
@@ -90,8 +99,9 @@ def create_app() -> gr.Blocks:
     """Cria e retorna a aplicação Gradio.
 
     Layout:
-    - Campo de texto para URL
-    - Upload de arquivos .md (máximo 10)
+    - Campo de texto para URL de repositório remoto
+    - Campo de texto para caminho de repositório local
+    - Upload de arquivos .md (múltiplos, máximo 10)
     - Botão de análise
     - Área de resultado com renderização Markdown
 
@@ -100,7 +110,11 @@ def create_app() -> gr.Blocks:
     """
     with gr.Blocks(title="Doc Intelligence Agent") as app:
         gr.Markdown("# 📄 Doc Intelligence Agent")
-        gr.Markdown("Analise a qualidade da documentação de um repositório Git ou arquivos Markdown locais.")
+        gr.Markdown(
+            "Analise a qualidade da documentação de um repositório Git, "
+            "diretório local ou arquivos Markdown enviados por upload.\n\n"
+            "**Preencha apenas um dos campos abaixo.**"
+        )
 
         with gr.Row():
             with gr.Column():
@@ -109,8 +123,13 @@ def create_app() -> gr.Blocks:
                     placeholder="https://github.com/user/repo",
                     lines=1,
                 )
+                local_path_input = gr.Textbox(
+                    label="Caminho do Repositório Local",
+                    placeholder="/caminho/para/seu/projeto",
+                    lines=1,
+                )
                 file_input = gr.File(
-                    label="Upload de Arquivos Markdown",
+                    label="Upload de Arquivos Markdown (múltiplos permitidos)",
                     file_count="multiple",
                     file_types=[".md", ".markdown"],
                     type="filepath",
@@ -122,7 +141,7 @@ def create_app() -> gr.Blocks:
 
         submit_btn.click(
             fn=handle_submission,
-            inputs=[url_input, file_input],
+            inputs=[url_input, local_path_input, file_input],
             outputs=output,
         )
 
