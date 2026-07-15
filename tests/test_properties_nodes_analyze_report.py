@@ -123,16 +123,16 @@ def test_analyze_docs_issues_bounded() -> None:
 
 
 def test_analyze_docs_score_range_and_justification() -> None:
-    """Nota entre 0-10, justificativa >= 2 frases."""
-    context = "# README\n\nDescrição completa do projeto com informações relevantes para avaliação."
+    """Nota entre 0-10, justificativa >= 3 frases."""
+    context = "# README\n\nDescrição completa do projeto com informações relevantes para avaliação completa das dimensões e nota final."
     state = _make_state(merged_context=context)
     result = analyze_docs(state)
 
     ar = result["analysis_result"]
     assert 0 <= ar["score"] <= 10
-    # Justificativa com pelo menos 2 frases (2 pontos)
+    # Justificativa com pelo menos 3 frases (3 pontos)
     sentences = [s.strip() for s in ar["justification"].split(".") if s.strip()]
-    assert len(sentences) >= 2
+    assert len(sentences) >= 3
 
 
 # --- generate_report_markdown: 7 seções ---
@@ -478,3 +478,54 @@ def test_no_toc_issue_for_short_doc() -> None:
     issues = result["analysis_result"]["issues"]
     observations = [i["observation"].lower() for i in issues]
     assert not any("sumário" in obs or "table of contents" in obs for obs in observations)
+
+
+# --- Justificativa contextualizada (#48) ---
+
+
+def test_justification_mentions_dimensions() -> None:
+    """Justificativa menciona ao menos uma dimensão com explicação."""
+    context = (
+        "# Projeto\n\n"
+        "Descrição do projeto com informações suficientes para avaliação.\n\n"
+        "## Instalação\n\npip install projeto\n\n"
+        "## Uso\n\nExemplo aqui.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    justification = result["analysis_result"]["justification"].lower()
+    dimension_keywords = ["clareza", "cobertura", "consistencia", "consistência", "onboarding"]
+    assert any(kw in justification for kw in dimension_keywords), (
+        f"Justificativa deveria mencionar dimensões: {justification}"
+    )
+
+
+def test_justification_mentions_main_issue() -> None:
+    """Justificativa menciona o principal problema encontrado."""
+    context = (
+        "# Projeto\n\n"
+        "Descrição do projeto aqui com detalhes suficientes para análise completa de todas dimensões.\n\n"
+        "## Uso\n\nExemplo de uso com mais texto para passar do limite mínimo de caracteres.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    justification = result["analysis_result"]["justification"].lower()
+    assert "ponto de atenção" in justification or "problema" in justification
+
+
+def test_justification_minimum_3_sentences() -> None:
+    """Justificativa tem no mínimo 3 frases."""
+    context = (
+        "# Projeto\n\n"
+        "Um projeto interessante com funcionalidades úteis.\n\n"
+        "## Instalação\n\npip install x\n\n"
+        "## Contributing\n\nFaça fork.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    justification = result["analysis_result"]["justification"]
+    sentences = [s.strip() for s in justification.split(".") if s.strip()]
+    assert len(sentences) >= 3, f"Apenas {len(sentences)} frases: {justification}"

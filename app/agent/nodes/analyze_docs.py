@@ -428,15 +428,68 @@ def _calculate_score(
     if has_critical:
         score = min(score, MAX_SCORE_WITH_CRITICAL)
 
-    justification = (
-        f"Avaliação baseada em {len(strengths)} pontos fortes e {len(issues)} problemas identificados "
-        f"({len(critical_issues)} críticos, {len(minor_issues)} menores). "
-        f"As dimensões de clareza, cobertura, consistência e onboarding foram consideradas na composição da nota."
+    justification = _build_contextual_justification(
+        dimensions, strengths, issues, critical_issues, minor_issues, has_critical, score
     )
 
+    return score, justification
+
+
+def _build_contextual_justification(
+    dimensions: dict,
+    strengths: list,
+    issues: list,
+    critical_issues: list,
+    minor_issues: list,
+    has_critical: bool,
+    score: int,
+) -> str:
+    """Gera justificativa contextualizada com detalhes por dimensão.
+
+    Menciona ao menos 2 dimensões com explicação, o principal problema
+    e o principal ponto forte. Mínimo 3 frases.
+    """
+    parts = []
+
+    # Frase 1: resumo quantitativo
+    parts.append(
+        f"Avaliação baseada em {len(strengths)} pontos fortes e {len(issues)} problemas "
+        f"({len(critical_issues)} críticos, {len(minor_issues)} menores)."
+    )
+
+    # Frase 2-3: detalhes de dimensões
+    dim_descriptions = {
+        "clareza": {"adequada": "com boa estrutura e formatação", "parcial": "com estrutura parcial", "insuficiente": "com estrutura insuficiente"},
+        "cobertura": {"ampla": "cobrindo os tópicos essenciais", "parcial": "com cobertura parcial dos tópicos", "limitada": "com cobertura limitada"},
+        "consistencia": {"consistente": "mantendo uniformidade de estilo", "parcial": "com consistência parcial de formatação"},
+        "onboarding": {"presente": "facilitando o início para novos desenvolvedores", "ausente": "sem instruções claras de início rápido"},
+    }
+
+    dim_phrases = []
+    for dim_name, dim_value in dimensions.items():
+        descs = dim_descriptions.get(dim_name, {})
+        if dim_value in descs:
+            dim_phrases.append(f"{dim_name} {descs[dim_value]}")
+
+    if len(dim_phrases) >= 2:
+        parts.append(f"A documentação apresenta {dim_phrases[0]} e {dim_phrases[1]}.")
+    elif dim_phrases:
+        parts.append(f"A documentação apresenta {dim_phrases[0]}.")
+
+    # Frase 4: principal ponto forte
+    if strengths and strengths[0] != "Documentação existente.":
+        parts.append(f"Destaque positivo: {strengths[0].rstrip('.')}")
+
+    # Frase 5: principal problema
+    if issues:
+        main_issue = issues[0].get("observation", "")
+        if main_issue:
+            parts.append(f"Principal ponto de atenção: {main_issue.rstrip('.')}")
+
+    # Frase sobre limitação por problemas críticos
     if has_critical:
-        justification += (
-            f" A nota foi limitada a no máximo {MAX_SCORE_WITH_CRITICAL} devido a problemas críticos pendentes."
+        parts.append(
+            f"A nota foi limitada a no máximo {MAX_SCORE_WITH_CRITICAL} devido a problemas críticos pendentes."
         )
 
-    return score, justification
+    return ". ".join(parts) + "."
