@@ -35,6 +35,9 @@ def analyze_docs(state: AgentState) -> dict:
     strengths = _identify_strengths(merged_context, base_insuficiente)
     issues = _identify_issues(merged_context, base_insuficiente)
 
+    # Reconciliar: remover issues que contradizem strengths
+    issues = _reconcile_strengths_and_issues(strengths, issues)
+
     # Calcular nota
     score, justification = _calculate_score(
         merged_context, dimensions, strengths, issues, base_insuficiente
@@ -136,6 +139,135 @@ def _identify_strengths(context: str, insufficient: bool) -> list[str]:
     return strengths[:10]
 
 
+# Mapeamento de categorias para reconciliação strengths vs issues
+_CATEGORY_KEYWORDS = {
+    "instalação": ["install", "instalação", "pip", "npm", "setup"],
+    "licença": ["licen", "license", "mit", "apache"],
+    "contribuição": ["contribui", "contributing", "pull request"],
+    "código": ["código", "code", "exemplo"],
+    "teste": ["test", "teste", "pytest", "jest"],
+}
+
+
+def _reconcile_strengths_and_issues(
+    strengths: list[str], issues: list[dict]
+) -> list[dict]:
+    """Remove issues que contradizem diretamente um strength identificado.
+
+    Se um tópico (ex: licença) aparece como ponto forte, remove a issue
+    correspondente que reclama da ausência desse tópico.
+
+    Args:
+        strengths: Lista de pontos fortes identificados.
+        issues: Lista de problemas identificados.
+
+    Returns:
+        Lista de issues filtrada sem contradições.
+    """
+    # Identificar categorias presentes nos strengths
+    strength_text = " ".join(strengths).lower()
+    present_categories: set[str] = set()
+
+    for category, keywords in _CATEGORY_KEYWORDS.items():
+        if any(kw in strength_text for kw in keywords):
+            present_categories.add(category)
+
+    # Filtrar issues que reclamam de ausência de algo que já é strength
+    filtered_issues = []
+    for issue in issues:
+        observation = issue.get("observation", "").lower()
+        is_contradiction = False
+
+        for category in present_categories:
+            keywords = _CATEGORY_KEYWORDS[category]
+            if any(kw in observation for kw in keywords):
+                # Esta issue reclama de algo que já é ponto forte
+                is_contradiction = True
+                break
+
+        if not is_contradiction:
+            filtered_issues.append(issue)
+
+    # Garantir pelo menos 1 issue
+    if not filtered_issues:
+        filtered_issues.append({
+            "observation": "Documentação aparenta estar completa.",
+            "recommendation": "Considerar adicionar exemplos avançados ou FAQ.",
+        })
+
+    return filtered_issues
+
+
+def _strip_traceability_headers(context: str) -> str:
+    """Remove headers de rastreabilidade (--- Fonte: ... ---) do início do contexto.
+
+    O merged_context pode ter múltiplos documentos com headers de rastreabilidade.
+    Para verificação de título/descrição, analisamos o conteúdo do primeiro documento.
+    """
+    lines = context.strip().splitlines()
+    # Pular linhas de rastreabilidade e linhas em branco no início
+    start = 0
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("--- Fonte:") and stripped.endswith("---"):
+            start = i + 1
+            continue
+        if stripped == "" and i == start:
+            start = i + 1
+            continue
+        break
+
+    return "\n".join(lines[start:])
+
+
+def _has_title(context: str) -> bool:
+    """Verifica se o documento inicia com um título de nível 1 nas primeiras 3 linhas."""
+    clean = _strip_traceability_headers(context)
+    lines = clean.strip().splitlines()
+    for line in lines[:3]:
+        stripped = line.strip()
+        if stripped.startswith("# ") and len(stripped) > 2:
+            return True
+        # Ignorar linhas em branco no início
+        if stripped and not stripped.startswith("#"):
+            return False
+    return False
+
+
+def _has_description_after_title(context: str) -> bool:
+    """Verifica se há parágrafo descritivo nas primeiras 5 linhas após o título."""
+    clean = _strip_traceability_headers(context)
+    lines = clean.strip().splitlines()
+
+    # Encontrar o título
+    title_index = -1
+    for i, line in enumerate(lines[:3]):
+        if line.strip().startswith("# "):
+            title_index = i
+            break
+
+    if title_index == -1:
+        # Sem título, verificar se há texto descritivo no início
+        for line in lines[:5]:
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and not stripped.startswith("-") and len(stripped) > 20:
+                return True
+        return False
+
+    # Verificar se há parágrafo ANTES do próximo heading (##)
+    after_title = lines[title_index + 1: title_index + 6]
+    for line in after_title:
+        stripped = line.strip()
+        # Se encontramos outro heading antes de um parágrafo, não há descrição
+        if stripped.startswith("#"):
+            return False
+        # Parágrafo descritivo: não vazio, não é lista, tem tamanho razoável
+        if stripped and not stripped.startswith("-") and not stripped.startswith("|") and len(stripped) > 20:
+            return True
+
+    return False
+
+
 def _identify_issues(context: str, insufficient: bool) -> list[dict]:
     """Identifica problemas na documentação (1-15)."""
     if insufficient:
@@ -147,6 +279,20 @@ def _identify_issues(context: str, insufficient: bool) -> list[dict]:
         ]
 
     issues = []
+
+    # Verificar título do projeto
+    if not _has_title(context):
+        issues.append({
+            "observation": "Título do projeto ausente.",
+            "recommendation": "Adicionar título de nível 1 (# Nome do Projeto) no início do documento.",
+        })
+
+    # Verificar descrição/resumo do projeto
+    if not _has_description_after_title(context):
+        issues.append({
+            "observation": "Descrição/resumo do projeto ausente.",
+            "recommendation": "Adicionar 1-3 frases descrevendo o propósito do projeto logo após o título.",
+        })
 
     if "```" not in context:
         issues.append({
@@ -184,6 +330,9 @@ def _identify_issues(context: str, insufficient: bool) -> list[dict]:
             "recommendation": "Documentar como executar os testes do projeto.",
         })
 
+    # Verificações estruturais
+    issues.extend(_check_structural_quality(context))
+
     if not issues:
         issues.append({
             "observation": "Documentação aparenta estar completa.",
@@ -193,6 +342,60 @@ def _identify_issues(context: str, insufficient: bool) -> list[dict]:
     return issues[:15]
 
 
+def _check_structural_quality(context: str) -> list[dict]:
+    """Verifica qualidade estrutural do documento.
+
+    Detecta:
+    - Seções vazias (heading seguido de outro heading sem conteúdo)
+    - Documento longo sem TOC (>5 seções, >30 linhas)
+    - Ausência de links
+    - Ausência de parágrafos explicativos (só código e cabeçalhos)
+    """
+    issues = []
+    lines = context.splitlines()
+
+    # Detectar seções vazias
+    empty_sections = 0
+    for i in range(len(lines) - 1):
+        if lines[i].strip().startswith("#") and lines[i + 1].strip().startswith("#"):
+            empty_sections += 1
+
+    if empty_sections >= 2:
+        issues.append({
+            "observation": f"Seções vazias detectadas ({empty_sections} cabeçalhos consecutivos sem conteúdo).",
+            "recommendation": "Preencher seções vazias ou removê-las do documento.",
+        })
+
+    # Detectar documento longo sem TOC
+    header_count = sum(1 for l in lines if l.strip().startswith("#"))
+    content_lines = len([l for l in lines if l.strip()])
+    has_toc_indicator = any(
+        kw in context.lower()
+        for kw in ["sumário", "índice", "table of contents", "toc", "## conteúdo"]
+    )
+
+    if header_count > 5 and content_lines >= 30 and not has_toc_indicator:
+        issues.append({
+            "observation": "Documento longo sem sumário/Table of Contents.",
+            "recommendation": "Adicionar sumário com links para as seções principais.",
+        })
+
+    # Detectar ausência de links
+    has_links = "](http" in context or "](/" in context or "[" in context and "](" in context
+    if not has_links and len(context) > 300:
+        issues.append({
+            "observation": "Ausência de links ou referências externas.",
+            "recommendation": "Incluir links para documentação adicional, repositório ou recursos relacionados.",
+        })
+
+    return issues
+
+
+# Problemas críticos: ausência de título, descrição, instalação
+CRITICAL_ISSUE_KEYWORDS = ["título", "descrição", "resumo", "instalação", "install"]
+MAX_SCORE_WITH_CRITICAL = 7
+
+
 def _calculate_score(
     context: str,
     dimensions: dict,
@@ -200,7 +403,14 @@ def _calculate_score(
     issues: list,
     insufficient: bool,
 ) -> tuple[int, str]:
-    """Calcula nota de 0-10 com justificativa (≥2 frases)."""
+    """Calcula nota de 0-10 com justificativa (≥2 frases).
+
+    Regras:
+    - Base insuficiente: nota máxima 3
+    - Problema crítico presente: nota máxima 7
+    - Problemas críticos: ausência de título, descrição, instalação
+    - Problemas menores: ausência de contributing, FAQ, exemplos avançados
+    """
     if insufficient:
         score = min(2, MAX_SCORE_INSUFFICIENT)
         justification = (
@@ -209,7 +419,19 @@ def _calculate_score(
         )
         return score, justification
 
-    # Calcular score baseado em dimensões e balanço fortes/problemas
+    # Classificar problemas em críticos e menores
+    critical_issues = []
+    minor_issues = []
+    for issue in issues:
+        obs = issue.get("observation", "").lower()
+        if any(kw in obs for kw in CRITICAL_ISSUE_KEYWORDS):
+            critical_issues.append(issue)
+        else:
+            minor_issues.append(issue)
+
+    has_critical = len(critical_issues) > 0
+
+    # Calcular score
     base_score = 5
     dim_values = list(dimensions.values())
 
@@ -217,17 +439,81 @@ def _calculate_score(
     positive_dims = ["adequada", "ampla", "consistente", "presente"]
     bonus = sum(1 for v in dim_values if v in positive_dims)
 
-    # Penalidade por problemas
-    penalty = min(len(issues), 4)
+    # Penalidade: críticos pesam 2, menores pesam 1
+    penalty = (len(critical_issues) * 2) + len(minor_issues)
+    penalty = min(penalty, 6)
 
     # Bonus por pontos fortes
     strength_bonus = min(len(strengths), 3)
 
     score = max(0, min(10, base_score + bonus + strength_bonus - penalty))
 
-    justification = (
-        f"Avaliação baseada em {len(strengths)} pontos fortes e {len(issues)} problemas identificados. "
-        f"As dimensões de clareza, cobertura, consistência e onboarding foram consideradas na composição da nota."
+    # Limitar nota se há problemas críticos
+    if has_critical:
+        score = min(score, MAX_SCORE_WITH_CRITICAL)
+
+    justification = _build_contextual_justification(
+        dimensions, strengths, issues, critical_issues, minor_issues, has_critical, score
     )
 
     return score, justification
+
+
+def _build_contextual_justification(
+    dimensions: dict,
+    strengths: list,
+    issues: list,
+    critical_issues: list,
+    minor_issues: list,
+    has_critical: bool,
+    score: int,
+) -> str:
+    """Gera justificativa contextualizada com detalhes por dimensão.
+
+    Menciona ao menos 2 dimensões com explicação, o principal problema
+    e o principal ponto forte. Mínimo 3 frases.
+    """
+    parts = []
+
+    # Frase 1: resumo quantitativo
+    parts.append(
+        f"Avaliação baseada em {len(strengths)} pontos fortes e {len(issues)} problemas "
+        f"({len(critical_issues)} críticos, {len(minor_issues)} menores)."
+    )
+
+    # Frase 2-3: detalhes de dimensões
+    dim_descriptions = {
+        "clareza": {"adequada": "com boa estrutura e formatação", "parcial": "com estrutura parcial", "insuficiente": "com estrutura insuficiente"},
+        "cobertura": {"ampla": "cobrindo os tópicos essenciais", "parcial": "com cobertura parcial dos tópicos", "limitada": "com cobertura limitada"},
+        "consistencia": {"consistente": "mantendo uniformidade de estilo", "parcial": "com consistência parcial de formatação"},
+        "onboarding": {"presente": "facilitando o início para novos desenvolvedores", "ausente": "sem instruções claras de início rápido"},
+    }
+
+    dim_phrases = []
+    for dim_name, dim_value in dimensions.items():
+        descs = dim_descriptions.get(dim_name, {})
+        if dim_value in descs:
+            dim_phrases.append(f"{dim_name} {descs[dim_value]}")
+
+    if len(dim_phrases) >= 2:
+        parts.append(f"A documentação apresenta {dim_phrases[0]} e {dim_phrases[1]}.")
+    elif dim_phrases:
+        parts.append(f"A documentação apresenta {dim_phrases[0]}.")
+
+    # Frase 4: principal ponto forte
+    if strengths and strengths[0] != "Documentação existente.":
+        parts.append(f"Destaque positivo: {strengths[0].rstrip('.')}")
+
+    # Frase 5: principal problema
+    if issues:
+        main_issue = issues[0].get("observation", "")
+        if main_issue:
+            parts.append(f"Principal ponto de atenção: {main_issue.rstrip('.')}")
+
+    # Frase sobre limitação por problemas críticos
+    if has_critical:
+        parts.append(
+            f"A nota foi limitada a no máximo {MAX_SCORE_WITH_CRITICAL} devido a problemas críticos pendentes."
+        )
+
+    return ". ".join(parts) + "."

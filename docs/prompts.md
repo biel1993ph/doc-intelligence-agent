@@ -379,3 +379,94 @@ OSError: Cannot find empty port in range: 7860-7860.
 Estou com esse erro, parei o serviço e subi novamente.
 OSError: Cannot find empty port in range: 7860-7860. address already in use.
 ```
+
+
+## 15. Análise de Qualidade do Relatório — Issues de Melhoria
+
+**Problema identificado:** O agente analisou um README incompleto (sem título e sem descrição do projeto) e deu nota 9/10 sem reclamar das ausências fundamentais. Além disso, gerou contradição listando "Informação de licença presente" como ponto forte e "Informação de licença não encontrada" como problema simultaneamente.
+
+```
+Agente não reclamou da falta de descrição no readme. Está correto?
+```
+
+**Análise:** A lógica em `analyze_docs.py` usava apenas busca por keywords genéricas, sem validar estrutura fundamental do documento. Identificados 5 pontos de melhoria:
+
+```
+Sim, mas crie uma issue nova para tratar essa questão.
+Identificou mais algum ponto de melhoria para análise do relatório ser mais completa?
+```
+
+**Issues criadas e executadas:**
+
+| # | Issue | PR | Descrição | Status |
+|---|-------|-----|-----------|--------|
+| #44 | Verificar presença de título e descrição | #49 | Detecta falta de `# Título` e descrição no início | ✅ |
+| #45 | Eliminar contradição entre pontos fortes e problemas | #50 | Remove issues que contradizem strengths | ✅ |
+| #46 | Melhorar cálculo da nota com pesos por dimensão | #51 | Problemas críticos (peso 2) vs menores (peso 1), nota max 7 se há crítico | ✅ |
+| #47 | Adicionar verificações estruturais de qualidade | #52 | Seções vazias, doc longo sem TOC, ausência de links | ✅ |
+| #48 | Gerar justificativa contextualizada por dimensão | #53 | Explicação específica por dimensão + principal problema + principal ponto forte | ✅ |
+
+## 16. Execução da Issue #25 — Testes de Integração
+
+```
+Executar a issues #25, não excluir o arquivo .env.example e realizar o commit do mesmo.
+```
+
+**Resultado:**
+- Branch: `feature/issue-25-integration-tests`
+- PR: #42
+- Arquivos: `tests/conftest.py`, `tests/test_integration.py`, `tests/test_smoke.py`, `.env.example`
+- Testes: 21/21 passando
+- Status: ✅ Merged + Closed
+
+**Nota:** O arquivo `.env.example` tinha um caractere unicode invisível (`\u200e` Left-to-Right Mark) no nome. Foi corrigido durante a execução.
+
+## 17. Fix — Detecção de título com headers de rastreabilidade
+
+**Problema:** O agente reportava "Título do projeto ausente" mesmo quando o README tinha título (`# LeadImob`). Causado pelo `merged_context` começar com `--- Fonte: README.md ---` (header de rastreabilidade) que confundia a função `_has_title()`.
+
+```
+Tem o nome do projeto no readme, mas está informando que não.
+Readme do projeto: https://github.com/IA-para-DEVs-SCTEC-T2/mini-projeto-leadimob/blob/main/README.md
+```
+
+**Solução:** Nova função `_strip_traceability_headers()` que remove headers `--- Fonte: ... ---` antes de verificar título e descrição.
+
+- Branch: `fix/issue-44-title-detection-traceability`
+- PR: #54
+- Status: ✅ Merged
+
+## 18. Resolução de Conflito — PR #55 (develop → main)
+
+```
+Tem conflito nesse PR https://github.com/biel1993ph/doc-intelligence-agent/pull/55
+```
+
+**Causa:** A branch `main` e `develop` divergiram nos arquivos `analyze_docs.py` e `test_properties_nodes_analyze_report.py`.
+
+**Solução:** Merge de `origin/main` em `develop` preservando a versão do `develop` (mais recente e completa), push do develop atualizado, conflito resolvido automaticamente no PR.
+
+- Status: ✅ PR #55 agora MERGEABLE
+
+## 19. Tabela Consolidada — Todas as Issues Executadas
+
+| Issue | Branch | PR | Status |
+|-------|--------|-----|--------|
+| #16 | feature/issue-16-repo-tools | #28 | ✅ |
+| #17 | feature/issue-17-file-text-tools | #29 | ✅ |
+| #18 | feature/issue-18-nodes-input-validation | #30 | ✅ |
+| #19 | feature/issue-19-nodes-discover-read | #31 | ✅ |
+| #20 | feature/issue-20-nodes-analyze-report | #32 | ✅ |
+| #21 | feature/issue-21-compile-graph | #33 | ✅ |
+| #22 | feature/issue-22-credential-filter | #34 | ✅ |
+| #23 | feature/issue-23-gradio-ui | #35 | ✅ |
+| #24 | feature/issue-24-prompts-examples | #36 | ✅ |
+| #25 | feature/issue-25-integration-tests | #42 | ✅ |
+| #44 | feature/issue-44-title-description-check | #49 | ✅ |
+| #45 | feature/issue-45-no-contradictions | #50 | ✅ |
+| #46 | feature/issue-46-weighted-score | #51 | ✅ |
+| #47 | feature/issue-47-structural-checks | #52 | ✅ |
+| #48 | feature/issue-48-contextual-justification | #53 | ✅ |
+| fix | fix/issue-44-title-detection-traceability | #54 | ✅ |
+
+**Total de testes na suite final:** 105 passando
