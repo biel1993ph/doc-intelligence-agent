@@ -221,3 +221,81 @@ def test_present_result_does_not_alter_state() -> None:
     state = _make_state(final_report="# Report")
     result = present_result(state)
     assert result == {}
+
+
+# --- Verificação de título e descrição (#44) ---
+
+
+def test_analyze_docs_detects_missing_title() -> None:
+    """Documento sem título # nas primeiras linhas gera issue de título ausente."""
+    # Conteúdo sem título, começa com texto normal mas suficiente para análise
+    context = (
+        "**Dois perfis de uso:**\n"
+        "- Participante: Interface simples e intuitiva para responder pesquisas em totens\n"
+        "- Master: Acesso protegido por senha para configurar eventos, visualizar feedbacks\n\n"
+        "## Tecnologias\n\n"
+        "| Tecnologia | Versão | Uso |\n"
+        "| Flutter | 3.x | Framework principal |\n"
+        "| Dart | 3.11 | Linguagem |\n\n"
+        "## Instalação\n\npip install projeto\n\n"
+        "## Uso\n\nExemplo de uso detalhado aqui com informações relevantes.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"] for i in issues]
+    assert any("Título" in obs and "ausente" in obs for obs in observations), (
+        f"Esperava issue de título ausente, mas encontrou: {observations}"
+    )
+
+
+def test_analyze_docs_detects_missing_description() -> None:
+    """Documento com título mas sem descrição gera issue de descrição ausente."""
+    # Título seguido imediatamente de outro heading sem descrição
+    context = (
+        "# Meu Projeto\n\n"
+        "## Instalação\n\n"
+        "pip install projeto com todas as dependências necessárias para o ambiente de produção\n\n"
+        "## Uso\n\nExemplo de uso aqui com detalhes suficientes para o leitor entender como funciona.\n\n"
+        "## Contribuindo\n\nFaça um fork e envie pull request com suas alterações documentadas.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"] for i in issues]
+    assert any("Descrição" in obs or "resumo" in obs for obs in observations), (
+        f"Esperava issue de descrição ausente, mas encontrou: {observations}"
+    )
+
+
+def test_analyze_docs_no_title_issue_when_title_present() -> None:
+    """Documento com título válido NÃO gera issue de título ausente."""
+    context = (
+        "# TaskFlow\n\n"
+        "Gerenciador de tarefas colaborativo com interface web.\n\n"
+        "## Instalação\n\npip install taskflow\n\n"
+        "## Uso\n\nExemplo aqui.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"] for i in issues]
+    assert not any("Título" in obs and "ausente" in obs for obs in observations)
+
+
+def test_analyze_docs_no_description_issue_when_description_present() -> None:
+    """Documento com título e descrição NÃO gera issue de descrição ausente."""
+    context = (
+        "# TaskFlow\n\n"
+        "Gerenciador de tarefas colaborativo com interface web e API REST.\n\n"
+        "## Instalação\n\npip install taskflow\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"] for i in issues]
+    assert not any("Descrição" in obs and "ausente" in obs for obs in observations)
