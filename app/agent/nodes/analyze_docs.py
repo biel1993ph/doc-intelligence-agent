@@ -136,6 +136,52 @@ def _identify_strengths(context: str, insufficient: bool) -> list[str]:
     return strengths[:10]
 
 
+def _has_title(context: str) -> bool:
+    """Verifica se o documento inicia com um título de nível 1 nas primeiras 3 linhas."""
+    lines = context.strip().splitlines()
+    for line in lines[:3]:
+        stripped = line.strip()
+        if stripped.startswith("# ") and len(stripped) > 2:
+            return True
+        # Ignorar linhas em branco no início
+        if stripped and not stripped.startswith("#"):
+            return False
+    return False
+
+
+def _has_description_after_title(context: str) -> bool:
+    """Verifica se há parágrafo descritivo nas primeiras 5 linhas após o título."""
+    lines = context.strip().splitlines()
+
+    # Encontrar o título
+    title_index = -1
+    for i, line in enumerate(lines[:3]):
+        if line.strip().startswith("# "):
+            title_index = i
+            break
+
+    if title_index == -1:
+        # Sem título, verificar se há texto descritivo no início
+        for line in lines[:5]:
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and not stripped.startswith("-") and len(stripped) > 20:
+                return True
+        return False
+
+    # Verificar se há parágrafo ANTES do próximo heading (##)
+    after_title = lines[title_index + 1: title_index + 6]
+    for line in after_title:
+        stripped = line.strip()
+        # Se encontramos outro heading antes de um parágrafo, não há descrição
+        if stripped.startswith("#"):
+            return False
+        # Parágrafo descritivo: não vazio, não é lista, tem tamanho razoável
+        if stripped and not stripped.startswith("-") and not stripped.startswith("|") and len(stripped) > 20:
+            return True
+
+    return False
+
+
 def _identify_issues(context: str, insufficient: bool) -> list[dict]:
     """Identifica problemas na documentação (1-15)."""
     if insufficient:
@@ -147,6 +193,20 @@ def _identify_issues(context: str, insufficient: bool) -> list[dict]:
         ]
 
     issues = []
+
+    # Verificar título do projeto
+    if not _has_title(context):
+        issues.append({
+            "observation": "Título do projeto ausente.",
+            "recommendation": "Adicionar título de nível 1 (# Nome do Projeto) no início do documento.",
+        })
+
+    # Verificar descrição/resumo do projeto
+    if not _has_description_after_title(context):
+        issues.append({
+            "observation": "Descrição/resumo do projeto ausente.",
+            "recommendation": "Adicionar 1-3 frases descrevendo o propósito do projeto logo após o título.",
+        })
 
     if "```" not in context:
         issues.append({
