@@ -35,6 +35,9 @@ def analyze_docs(state: AgentState) -> dict:
     strengths = _identify_strengths(merged_context, base_insuficiente)
     issues = _identify_issues(merged_context, base_insuficiente)
 
+    # Reconciliar: remover issues que contradizem strengths
+    issues = _reconcile_strengths_and_issues(strengths, issues)
+
     # Calcular nota
     score, justification = _calculate_score(
         merged_context, dimensions, strengths, issues, base_insuficiente
@@ -134,6 +137,65 @@ def _identify_strengths(context: str, insufficient: bool) -> list[str]:
         strengths.append("Documentação existente.")
 
     return strengths[:10]
+
+
+# Mapeamento de categorias para reconciliação strengths vs issues
+_CATEGORY_KEYWORDS = {
+    "instalação": ["install", "instalação", "pip", "npm", "setup"],
+    "licença": ["licen", "license", "mit", "apache"],
+    "contribuição": ["contribui", "contributing", "pull request"],
+    "código": ["código", "code", "exemplo"],
+    "teste": ["test", "teste", "pytest", "jest"],
+}
+
+
+def _reconcile_strengths_and_issues(
+    strengths: list[str], issues: list[dict]
+) -> list[dict]:
+    """Remove issues que contradizem diretamente um strength identificado.
+
+    Se um tópico (ex: licença) aparece como ponto forte, remove a issue
+    correspondente que reclama da ausência desse tópico.
+
+    Args:
+        strengths: Lista de pontos fortes identificados.
+        issues: Lista de problemas identificados.
+
+    Returns:
+        Lista de issues filtrada sem contradições.
+    """
+    # Identificar categorias presentes nos strengths
+    strength_text = " ".join(strengths).lower()
+    present_categories: set[str] = set()
+
+    for category, keywords in _CATEGORY_KEYWORDS.items():
+        if any(kw in strength_text for kw in keywords):
+            present_categories.add(category)
+
+    # Filtrar issues que reclamam de ausência de algo que já é strength
+    filtered_issues = []
+    for issue in issues:
+        observation = issue.get("observation", "").lower()
+        is_contradiction = False
+
+        for category in present_categories:
+            keywords = _CATEGORY_KEYWORDS[category]
+            if any(kw in observation for kw in keywords):
+                # Esta issue reclama de algo que já é ponto forte
+                is_contradiction = True
+                break
+
+        if not is_contradiction:
+            filtered_issues.append(issue)
+
+    # Garantir pelo menos 1 issue
+    if not filtered_issues:
+        filtered_issues.append({
+            "observation": "Documentação aparenta estar completa.",
+            "recommendation": "Considerar adicionar exemplos avançados ou FAQ.",
+        })
+
+    return filtered_issues
 
 
 def _has_title(context: str) -> bool:

@@ -299,3 +299,59 @@ def test_analyze_docs_no_description_issue_when_description_present() -> None:
     issues = result["analysis_result"]["issues"]
     observations = [i["observation"] for i in issues]
     assert not any("Descrição" in obs and "ausente" in obs for obs in observations)
+
+
+# --- Reconciliação strengths vs issues (#45) ---
+
+
+def test_no_contradiction_license() -> None:
+    """Se licença é ponto forte, não deve aparecer como problema."""
+    context = (
+        "# Projeto\n\n"
+        "Descrição do projeto com informações suficientes.\n\n"
+        "## Licença\n\nMIT License\n\n"
+        "## Instalação\n\npip install projeto\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    ar = result["analysis_result"]
+    strength_text = " ".join(ar["strengths"]).lower()
+    assert "licen" in strength_text or "license" in strength_text
+
+    issue_observations = [i["observation"].lower() for i in ar["issues"]]
+    assert not any("licen" in obs for obs in issue_observations), (
+        f"Contradição: licença é ponto forte mas também aparece como problema: {issue_observations}"
+    )
+
+
+def test_no_contradiction_install() -> None:
+    """Se instalação é ponto forte, não deve aparecer como problema."""
+    context = (
+        "# Projeto\n\n"
+        "Descrição do projeto aqui com detalhes.\n\n"
+        "## Instalação\n\npip install projeto\n\n"
+        "## Uso\n\nExemplo de uso com detalhes.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    ar = result["analysis_result"]
+    issue_observations = [i["observation"].lower() for i in ar["issues"]]
+    assert not any("install" in obs and "não encontrad" in obs for obs in issue_observations)
+
+
+def test_no_contradiction_contributing() -> None:
+    """Se contribuição é ponto forte, não deve aparecer como problema."""
+    context = (
+        "# Projeto\n\n"
+        "Descrição completa do projeto com detalhes.\n\n"
+        "## Contributing\n\nFaça fork e envie PR.\n\n"
+        "## Instalação\n\npip install x\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    ar = result["analysis_result"]
+    issue_observations = [i["observation"].lower() for i in ar["issues"]]
+    assert not any("contribui" in obs and "ausente" in obs for obs in issue_observations)
