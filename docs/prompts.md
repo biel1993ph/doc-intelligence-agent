@@ -235,3 +235,147 @@ Resultado: Issues consolidadas de ~30 subtarefas individuais para 11 issues agru
 | 25 | Testes de integração, fumaça e infraestrutura | testing |
 
 Labels criadas: `setup`, `ui`, `testing`, `security`, `agent`, `tools`
+
+
+## 9. Prompt para Execução de Issues (GitFlow)
+
+Prompt padrão utilizado para executar cada issue individualmente:
+
+```
+Você é um desenvolvedor responsável por executar exatamente o que está descrito na issue do GitHub abaixo, utilizando GitHub CLI e seguindo fluxo GitFlow.
+
+Link da issue: https://github.com/biel1993ph/doc-intelligence-agent/issues/<N>
+Link do Repositório: https://github.com/biel1993ph/doc-intelligence-agent
+
+Seu trabalho é:
+1. Ler completamente a issue.
+2. Colocar a issue em In Progress.
+3. Criar uma branch baseada na develop.
+4. Implementar exclusivamente o que está descrito na issue.
+5. Não criar documentação desnecessária.
+6. Não alterar escopo além do solicitado.
+7. Realizar commits objetivos e coerentes com a implementação.
+
+Regras:
+- Branch base: develop
+- Nome da branch: feature/issue-<N>-<descricao-curta>
+- Executar somente o que estiver explícito na issue.
+- Manter consistência com arquitetura atual do projeto.
+- Criar commits pequenos e objetivos.
+- Utilizar GitHub CLI sempre que possível.
+
+Proibido:
+- Não criar README extra.
+- Não criar documentação técnica adicional.
+- Não refatorar partes não relacionadas.
+- Não alterar dependências sem necessidade.
+- Não implementar melhorias "aproveitando a oportunidade".
+
+Fluxo:
+1. git checkout develop && git pull origin develop
+2. gh issue view <N> --repo biel1993ph/doc-intelligence-agent
+3. gh issue edit <N> --add-label "in progress"
+4. git checkout -b feature/issue-<N>-<descricao-curta>
+5. Implementar
+6. Rodar testes relevantes
+7. git add <arquivos> && git commit -m "feat: <descrição> (#<N>)"
+8. git push -u origin feature/issue-<N>-<descricao-curta>
+9. gh pr create --base develop --title "feat: <titulo> (#<N>)" --body "Closes #<N>"
+10. gh pr merge <PR> --squash
+11. gh issue close <N> --reason completed
+```
+
+## 10. Issues Executadas — Resumo
+
+| Issue | Branch | PR | Status |
+|-------|--------|-----|--------|
+| #16 | feature/issue-16-repo-tools | #28 | ✅ Merged + Closed |
+| #17 | feature/issue-17-file-text-tools | #29 | ✅ Merged + Closed |
+| #18 | feature/issue-18-nodes-input-validation | #30 | ✅ Merged + Closed |
+| #19 | feature/issue-19-nodes-discover-read | #31 | ✅ Merged + Closed |
+| #20 | feature/issue-20-nodes-analyze-report | #32 | ✅ Merged + Closed |
+| #21 | feature/issue-21-compile-graph | #33 | ✅ Merged + Closed |
+| #22 | feature/issue-22-credential-filter | #34 | ✅ Merged + Closed |
+| #23 | feature/issue-23-gradio-ui | #35 | ✅ Merged + Closed |
+| #24 | feature/issue-24-prompts-examples | #36 | ✅ Merged + Closed |
+| #25 | — | — | ⏳ Pendente |
+
+## 11. Prompt para Merge e Finalização de Issue
+
+```
+Realizar o merge do Pull Request #<PR> no repositório doc-intelligence-agent
+utilizando exclusivamente GitHub CLI (gh) e atualizar o status da tarefa
+relacionada para DONE.
+
+Fluxo:
+1. gh pr view <PR> --repo biel1993ph/doc-intelligence-agent --json state,mergeable,baseRefName
+2. gh pr checks <PR> --repo biel1993ph/doc-intelligence-agent
+3. gh pr view <PR> --repo biel1993ph/doc-intelligence-agent --json reviews
+4. gh pr merge <PR> --repo biel1993ph/doc-intelligence-agent --squash
+5. gh issue close <N> --repo biel1993ph/doc-intelligence-agent --reason completed
+
+Regras:
+- NÃO deletar a branch após o merge
+- Preferir squash merge
+- Verificar que não há checks pendentes ou conflitos
+- Fechar issue como completed via GitHub CLI
+```
+
+## 12. Correção de Erro de Execução — ModuleNotFoundError
+
+**Problema:** Ao executar `python3 app/main.py`, ocorria:
+```
+ModuleNotFoundError: No module named 'app'
+```
+
+**Causa:** O `main.py` usa imports absolutos (`from app.ui.gradio_app import create_app`), mas executar como `python3 app/main.py` coloca o diretório `app/` no `sys.path` ao invés da raiz do projeto.
+
+**Solução aplicada:**
+- Atualizar README.md para instruir execução via `python3 -m app.main`
+
+```
+Estou com erro na imagem em anexo ao executar Interface Web.
+ModuleNotFoundError: No module named 'app'
+```
+
+## 13. Ajuste da Interface — Repositório Local e Upload Múltiplo
+
+**Problema:** A interface Gradio não permitia:
+1. Informar caminho de repositório local (só aceitava URL remota)
+2. Anexar mais de um arquivo por vez (README + PRD)
+
+**Solução aplicada:**
+- Adicionado campo "Caminho do Repositório Local" na interface
+- Mantido `file_count="multiple"` com label mais claro
+- Atualizada `handle_submission` para aceitar 3 modos mutuamente exclusivos: URL, caminho local ou upload de arquivos
+- Atualizados testes em `tests/test_ui.py` (9 testes, todos passando)
+
+```
+Realizar ajustes para anexar o repositório local ou anexar mais de um (Readme e um PRD).
+Atualmente não é permitido anexar mais de um arquivo. Como também não é possível anexar um repositório local.
+```
+
+**Arquivos modificados:**
+- `app/ui/gradio_app.py` — nova assinatura `handle_submission(url, local_path, files)` + novo campo Gradio
+- `tests/test_ui.py` — testes atualizados para nova assinatura (9 testes)
+- `README.md` — comando de execução corrigido para `python3 -m app.main`
+
+## 14. Erro de Porta Ocupada — OSError: Address Already in Use
+
+**Problema:** Ao parar o servidor com `Ctrl+Z` e reiniciar, ocorria:
+```
+OSError: Cannot find empty port in range: 7860-7860.
+[Errno 48] address already in use
+```
+
+**Causa:** `Ctrl+Z` apenas **suspende** o processo (fica em background segurando a porta), não o encerra. O processo suspenso ainda ocupa a porta 7860.
+
+**Solução:**
+1. Matar o processo suspenso: `kill %1`
+2. Ou forçar liberação da porta: `lsof -ti :7860 | xargs kill -9`
+3. Usar `Ctrl+C` (em vez de `Ctrl+Z`) para encerrar o servidor corretamente
+
+```
+Estou com esse erro, parei o serviço e subi novamente.
+OSError: Cannot find empty port in range: 7860-7860. address already in use.
+```
