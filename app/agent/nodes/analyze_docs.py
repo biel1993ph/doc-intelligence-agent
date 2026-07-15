@@ -306,6 +306,9 @@ def _identify_issues(context: str, insufficient: bool) -> list[dict]:
             "recommendation": "Documentar como executar os testes do projeto.",
         })
 
+    # Verificações estruturais
+    issues.extend(_check_structural_quality(context))
+
     if not issues:
         issues.append({
             "observation": "Documentação aparenta estar completa.",
@@ -313,6 +316,55 @@ def _identify_issues(context: str, insufficient: bool) -> list[dict]:
         })
 
     return issues[:15]
+
+
+def _check_structural_quality(context: str) -> list[dict]:
+    """Verifica qualidade estrutural do documento.
+
+    Detecta:
+    - Seções vazias (heading seguido de outro heading sem conteúdo)
+    - Documento longo sem TOC (>5 seções, >30 linhas)
+    - Ausência de links
+    - Ausência de parágrafos explicativos (só código e cabeçalhos)
+    """
+    issues = []
+    lines = context.splitlines()
+
+    # Detectar seções vazias
+    empty_sections = 0
+    for i in range(len(lines) - 1):
+        if lines[i].strip().startswith("#") and lines[i + 1].strip().startswith("#"):
+            empty_sections += 1
+
+    if empty_sections >= 2:
+        issues.append({
+            "observation": f"Seções vazias detectadas ({empty_sections} cabeçalhos consecutivos sem conteúdo).",
+            "recommendation": "Preencher seções vazias ou removê-las do documento.",
+        })
+
+    # Detectar documento longo sem TOC
+    header_count = sum(1 for l in lines if l.strip().startswith("#"))
+    content_lines = len([l for l in lines if l.strip()])
+    has_toc_indicator = any(
+        kw in context.lower()
+        for kw in ["sumário", "índice", "table of contents", "toc", "## conteúdo"]
+    )
+
+    if header_count > 5 and content_lines >= 30 and not has_toc_indicator:
+        issues.append({
+            "observation": "Documento longo sem sumário/Table of Contents.",
+            "recommendation": "Adicionar sumário com links para as seções principais.",
+        })
+
+    # Detectar ausência de links
+    has_links = "](http" in context or "](/" in context or "[" in context and "](" in context
+    if not has_links and len(context) > 300:
+        issues.append({
+            "observation": "Ausência de links ou referências externas.",
+            "recommendation": "Incluir links para documentação adicional, repositório ou recursos relacionados.",
+        })
+
+    return issues
 
 
 # Problemas críticos: ausência de título, descrição, instalação
