@@ -421,3 +421,60 @@ def test_score_can_exceed_7_without_critical_issues() -> None:
     )
     if not has_critical:
         assert ar["score"] >= 7, f"Nota deveria ser >= 7 sem problemas críticos, mas foi {ar['score']}"
+
+
+# --- Verificações estruturais (#47) ---
+
+
+def test_detects_empty_sections() -> None:
+    """Detecta seções vazias (headings consecutivos sem conteúdo)."""
+    context = (
+        "# Projeto\n\n"
+        "Descrição do projeto com conteúdo suficiente.\n\n"
+        "## Seção 1\n"
+        "## Seção 2\n"
+        "## Seção 3\n\n"
+        "Conteúdo aqui.\n\n"
+        "## Instalação\n\npip install x\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"].lower() for i in issues]
+    assert any("seções vazias" in obs or "vazias" in obs for obs in observations)
+
+
+def test_detects_long_doc_without_toc() -> None:
+    """Detecta documento longo (>5 seções) sem sumário."""
+    sections = "\n\n".join([
+        "# Projeto\n\nDescrição completa do projeto com informações detalhadas.",
+        "## Seção 1\n\nConteúdo detalhado da seção 1 com múltiplas linhas.\nLinha extra de conteúdo.\nMais detalhes aqui.",
+        "## Seção 2\n\nConteúdo detalhado da seção 2 com explicações.\nOutra linha.\nMais informações.",
+        "## Seção 3\n\nConteúdo da seção 3 com exemplos.\nDetalhes adicionais.\nTexto complementar.",
+        "## Seção 4\n\nConteúdo da seção 4 descritivo.\nMais texto aqui.\nInformações extras.",
+        "## Seção 5\n\nConteúdo da seção 5 com documentação.\nDetalhes.\nMais coisas.",
+        "## Seção 6\n\nConteúdo da seção 6 final.\nTexto adicional.\nÚltima linha.",
+        "## Instalação\n\npip install projeto\nComando adicional aqui.\nMais instruções.",
+    ])
+    state = _make_state(merged_context=sections)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"].lower() for i in issues]
+    assert any("sumário" in obs or "table of contents" in obs for obs in observations)
+
+
+def test_no_toc_issue_for_short_doc() -> None:
+    """Documento curto (<5 seções) não gera issue de TOC."""
+    context = (
+        "# Projeto\n\nDescrição do projeto.\n\n"
+        "## Instalação\n\npip install x\n\n"
+        "## Uso\n\nExemplo aqui.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"].lower() for i in issues]
+    assert not any("sumário" in obs or "table of contents" in obs for obs in observations)
