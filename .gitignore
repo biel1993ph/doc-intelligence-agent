@@ -1,0 +1,38 @@
+# Variáveis de ambiente
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários
+tmp/
+*.tmp
+*.log
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Distribution
+dist/
+build/
+*.egg-info/

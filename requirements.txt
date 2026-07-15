@@ -1,0 +1,7 @@
+langgraph
+gradio
+gitpython
+requests
+hypothesis
+pytest
+pytest-cov
