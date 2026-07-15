@@ -198,9 +198,32 @@ def _reconcile_strengths_and_issues(
     return filtered_issues
 
 
+def _strip_traceability_headers(context: str) -> str:
+    """Remove headers de rastreabilidade (--- Fonte: ... ---) do início do contexto.
+
+    O merged_context pode ter múltiplos documentos com headers de rastreabilidade.
+    Para verificação de título/descrição, analisamos o conteúdo do primeiro documento.
+    """
+    lines = context.strip().splitlines()
+    # Pular linhas de rastreabilidade e linhas em branco no início
+    start = 0
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("--- Fonte:") and stripped.endswith("---"):
+            start = i + 1
+            continue
+        if stripped == "" and i == start:
+            start = i + 1
+            continue
+        break
+
+    return "\n".join(lines[start:])
+
+
 def _has_title(context: str) -> bool:
     """Verifica se o documento inicia com um título de nível 1 nas primeiras 3 linhas."""
-    lines = context.strip().splitlines()
+    clean = _strip_traceability_headers(context)
+    lines = clean.strip().splitlines()
     for line in lines[:3]:
         stripped = line.strip()
         if stripped.startswith("# ") and len(stripped) > 2:
@@ -213,7 +236,8 @@ def _has_title(context: str) -> bool:
 
 def _has_description_after_title(context: str) -> bool:
     """Verifica se há parágrafo descritivo nas primeiras 5 linhas após o título."""
-    lines = context.strip().splitlines()
+    clean = _strip_traceability_headers(context)
+    lines = clean.strip().splitlines()
 
     # Encontrar o título
     title_index = -1

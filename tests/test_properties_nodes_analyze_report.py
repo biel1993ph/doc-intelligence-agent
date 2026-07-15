@@ -529,3 +529,43 @@ def test_justification_minimum_3_sentences() -> None:
     justification = result["analysis_result"]["justification"]
     sentences = [s.strip() for s in justification.split(".") if s.strip()]
     assert len(sentences) >= 3, f"Apenas {len(sentences)} frases: {justification}"
+
+
+# --- Fix: título com headers de rastreabilidade ---
+
+
+def test_title_detected_with_traceability_header() -> None:
+    """Título é detectado mesmo quando merged_context começa com header de rastreabilidade."""
+    context = (
+        "--- Fonte: README.md ---\n\n"
+        "# LeadImob\n\n"
+        "Sistema de gerenciamento imobiliário com funcionalidades completas para gestão de leads.\n\n"
+        "## Instalação\n\npip install leadimob\n\n"
+        "## Uso\n\nExemplo de uso aqui com detalhes.\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"] for i in issues]
+    assert not any("Título" in obs and "ausente" in obs for obs in observations), (
+        f"Título presente mas detectado como ausente. Issues: {observations}"
+    )
+
+
+def test_description_detected_with_traceability_header() -> None:
+    """Descrição é detectada mesmo com header de rastreabilidade antes do conteúdo."""
+    context = (
+        "--- Fonte: README.md ---\n\n"
+        "# MeuProjeto\n\n"
+        "Uma aplicação completa para gerenciar tarefas com interface moderna.\n\n"
+        "## Instalação\n\npip install meuprojeto\n"
+    )
+    state = _make_state(merged_context=context)
+    result = analyze_docs(state)
+
+    issues = result["analysis_result"]["issues"]
+    observations = [i["observation"] for i in issues]
+    assert not any("Descrição" in obs and "ausente" in obs for obs in observations), (
+        f"Descrição presente mas detectada como ausente. Issues: {observations}"
+    )
