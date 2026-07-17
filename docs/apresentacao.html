@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente de Análise de Documentação</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+        .slide { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 4rem; scroll-snap-align: start; }
+        .slides-container { scroll-snap-type: y mandatory; overflow-y: scroll; height: 100vh; }
+
+        /* Slide 1 */
+        .slide-1 { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .slide-1 h1 { font-size: 2.8rem; margin-bottom: 0.5rem; color: #38bdf8; }
+        .slide-1 .subtitle { font-size: 1.2rem; color: #94a3b8; margin-bottom: 2.5rem; }
+        .slide-1 .description { font-size: 1.1rem; max-width: 800px; text-align: center; line-height: 1.7; margin-bottom: 3rem; color: #cbd5e1; }
+        .cards { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1.5rem 2rem; width: 240px; text-align: center; }
+        .card h3 { color: #38bdf8; margin-bottom: 0.5rem; font-size: 1rem; }
+        .card p { color: #94a3b8; font-size: 0.9rem; line-height: 1.5; }
+
+        /* Slide 2 */
+        .slide-2 { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+        .slide-2 h2 { font-size: 2.2rem; color: #38bdf8; margin-bottom: 0.5rem; }
+        .slide-2 .subtitle { font-size: 1rem; color: #94a3b8; margin-bottom: 2.5rem; }
+        .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; max-width: 900px; margin-bottom: 2.5rem; }
+        .step { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.2rem; }
+        .step-number { display: inline-block; background: #38bdf8; color: #0f172a; font-weight: 700; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .step h4 { color: #f1f5f9; margin-bottom: 0.3rem; font-size: 0.95rem; }
+        .step p { color: #94a3b8; font-size: 0.8rem; line-height: 1.4; }
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 900px; }
+        .bottom-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; }
+        .bottom-card h3 { color: #38bdf8; margin-bottom: 0.8rem; font-size: 1rem; }
+        .bottom-card ul { list-style: none; padding: 0; }
+        .bottom-card li { color: #cbd5e1; font-size: 0.85rem; line-height: 1.8; padding-left: 1rem; position: relative; }
+        .bottom-card li::before { content: "•"; color: #38bdf8; position: absolute; left: 0; }
+
+        /* Navigation */
+        .nav { position: fixed; bottom: 2rem; right: 2rem; display: flex; gap: 0.5rem; z-index: 10; }
+        .nav-dot { width: 12px; height: 12px; border-radius: 50%; background: #334155; border: none; cursor: pointer; }
+        .nav-dot.active { background: #38bdf8; }
+        .slide-indicator { position: fixed; bottom: 2rem; left: 2rem; color: #64748b; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="slides-container" id="slides">
+        <!-- Slide 1 -->
+        <div class="slide slide-1">
+            <h1>Agente de Análise de Documentação</h1>
+            <p class="subtitle">LangGraph + Gradio + análise automatizada</p>
+            <p class="description">
+                Solução para receber README/PRD ou link de repositório, localizar a documentação,
+                analisar qualidade e entregar um relatório final com resumo, pontos fortes,
+                problemas e melhorias priorizadas.
+            </p>
+            <div class="cards">
+                <div class="card">
+                    <h3>Entrada</h3>
+                    <p>URL do repositório ou arquivos README/PRD</p>
+                </div>
+                <div class="card">
+                    <h3>Pipeline</h3>
+                    <p>Validação, busca, leitura e análise contextual</p>
+                </div>
+                <div class="card">
+                    <h3>Saída</h3>
+                    <p>Relatório final acionável para o time</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="slide slide-2">
+            <h2>Fluxo operacional e entrega</h2>
+            <p class="subtitle">Etapas do agente e estrutura do relatório</p>
+            <div class="steps">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <h4>Entrada</h4>
+                    <p>Recebe link do repositório ou arquivos README/PRD.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <h4>Validar entrada</h4>
+                    <p>Confere formato, acesso, extensão e integridade.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <h4>Buscar docs</h4>
+                    <p>Localiza README.md, PRD.md ou arquivos equivalentes no repo/pasta.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <h4>Ler conteúdo</h4>
+                    <p>Extrai texto, seções, contexto técnico e objetivos do projeto.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">5</span>
+                    <h4>Analisar</h4>
+                    <p>Avalia clareza, cobertura, consistência, lacunas e riscos.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">6</span>
+                    <h4>Gerar saída</h4>
+                    <p>Resumo, pontos fortes, problemas encontrados e checklist.</p>
+                </div>
+            </div>
+            <div class="bottom-grid">
+                <div class="bottom-card">
+                    <h3>Arquitetura</h3>
+                    <ul>
+                        <li>LangGraph coordena o fluxo em etapas e regras de decisão.</li>
+                        <li>Gradio expõe interface simples para upload ou URL.</li>
+                        <li>Módulos separados para ingestão, parsing, análise e geração do relatório.</li>
+                    </ul>
+                </div>
+                <div class="bottom-card">
+                    <h3>Relatório final</h3>
+                    <ul>
+                        <li>Resumo executivo da documentação.</li>
+                        <li>Pontos fortes identificados.</li>
+                        <li>Problemas e lacunas críticas.</li>
+                        <li>Checklist priorizado de melhorias.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav">
+        <button class="nav-dot active" onclick="goToSlide(0)"></button>
+        <button class="nav-dot" onclick="goToSlide(1)"></button>
+    </div>
+    <div class="slide-indicator">1 / 2</div>
+
+    <script>
+        const container = document.getElementById('slides');
+        const dots = document.querySelectorAll('.nav-dot');
+        const indicator = document.querySelector('.slide-indicator');
+
+        function goToSlide(index) {
+            const slides = document.querySelectorAll('.slide');
+            slides[index].scrollIntoView({ behavior: 'smooth' });
+        }
+
+        container.addEventListener('scroll', () => {
+            const scrollPos = container.scrollTop;
+            const slideHeight = container.clientHeight;
+            const current = Math.round(scrollPos / slideHeight);
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === current));
+            indicator.textContent = `${current + 1} / 2`;
+        });
+    </script>
+</body>
+</html>
