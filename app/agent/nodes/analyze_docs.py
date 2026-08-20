@@ -92,7 +92,7 @@ def _evaluate_dimensions(context: str, insufficient: bool) -> dict:
 
     # Consistência: uniformidade de formatação
     lines = context.split("\n")
-    header_lines = [l for l in lines if l.startswith("#")]
+    header_lines = [line for line in lines if line.startswith("#")]
     if len(header_lines) >= 2:
         result["consistencia"] = "consistente"
     else:
@@ -367,8 +367,8 @@ def _check_structural_quality(context: str) -> list[dict]:
         })
 
     # Detectar documento longo sem TOC
-    header_count = sum(1 for l in lines if l.strip().startswith("#"))
-    content_lines = len([l for l in lines if l.strip()])
+    header_count = sum(1 for line in lines if line.strip().startswith("#"))
+    content_lines = len([line for line in lines if line.strip()])
     has_toc_indicator = any(
         kw in context.lower()
         for kw in ["sumário", "índice", "table of contents", "toc", "## conteúdo"]

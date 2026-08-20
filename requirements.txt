@@ -5,3 +5,4 @@ requests
 hypothesis
 pytest
 pytest-cov
+ruff

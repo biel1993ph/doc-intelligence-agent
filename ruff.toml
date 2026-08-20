@@ -1,0 +1,9 @@
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+    "F401",   # unused imports (existentes no código atual)
+    "E501",   # line too long
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["F401", "E402"]
