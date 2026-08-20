@@ -2,6 +2,8 @@ langgraph
 gradio
 gitpython
 requests
+openai
+python-dotenv
 hypothesis
 pytest
 pytest-cov

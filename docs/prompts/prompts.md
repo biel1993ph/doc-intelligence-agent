@@ -591,3 +591,53 @@ Executar a Issue #61 do repositório biel1993ph/doc-intelligence-agent seguindo 
 - Validação local: ruff check (0 erros), pytest (105 passed), imports OK
 - Issue #61: fechada como completed
 - Card Kanban: movido para Done
+
+
+## 23. Execução da Issue #62 — Integrar LLM na análise de documentação
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #62 — O nó `analyze_docs` utilizava análise puramente heurística (keyword matching, regex, contagem de padrões). O arquivo `app/prompts/analysis_prompt.md` existia com prompt detalhado para LLM, mas nunca era chamado no código. Sem LLM integrado, não existia "decisão do modelo" no grafo.
+
+### Objetivo do Prompt
+
+Integrar chamada a LLM (OpenAI ou compatível) no nó `analyze_docs`, utilizando o prompt já existente em `app/prompts/analysis_prompt.md`, com fallback para análise heurística caso a API esteja indisponível.
+
+### Prompt utilizado
+
+```
+Executar a Issue #62 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress
+4. Criar branch feature/issue-62-integrar-llm-analyze-docs
+5. Implementar:
+   - Integração OpenAI no analyze_docs.py com prompt de analysis_prompt.md
+   - Modelo via LLM_MODEL, API key via OPENAI_API_KEY, base URL via OPENAI_BASE_URL
+   - Parsing e validação de resposta JSON do LLM
+   - Regras determinísticas validam formato/limites sobre resultado do LLM
+   - Fallback para heurística se LLM falhar (timeout 60s, rate limit, parse error)
+   - Testes com mock da API (17 testes)
+   - Atualizar requirements.txt (openai, python-dotenv)
+   - Atualizar .env.example com OPENAI_BASE_URL
+6. Validar: pytest tests/ (122 testes passando)
+7. Commits semânticos (build, feat, test)
+8. Push + PR para develop
+9. Registrar prompts
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-62-integrar-llm-analyze-docs`
+- PR: #75
+- Arquivos alterados: `app/agent/nodes/analyze_docs.py`, `requirements.txt`, `.env.example`
+- Arquivo criado: `tests/test_analyze_docs_llm.py`
+- Testes: 122 passando (17 novos + 105 existentes)
+- Separação clara: LLM decide avaliação qualitativa, regras determinísticas validam formato/limites
+- Fallback automático para heurística em caso de falha
+- Commits: 3 (build, feat, test)
+- Issue #62: PR criado aguardando review
