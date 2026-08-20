@@ -509,3 +509,43 @@ Executar a Issue #59 do repositório biel1993ph/doc-intelligence-agent seguindo 
 - Testes: 105 passando, sem regressão
 - Issue #59: fechada como completed
 - Card Kanban: movido para Done
+
+
+## 21. Execução da Issue #60 — Mergear develop na main
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #60 — A branch main continha apenas o commit inicial. Todo o código funcional estava na develop. O requisito do projeto avaliativo exige que a main contenha a versão final e funcional.
+
+### Objetivo do Prompt
+
+Executar o merge de develop na main seguindo o fluxo definido na issue: checkout main → merge develop → validar testes → push → fechar issue.
+
+### Prompt utilizado
+
+```
+Executar a Issue #60 do repositório biel1993ph/doc-intelligence-agent:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress
+4. git checkout main && git pull origin main
+5. git merge develop --no-edit
+6. Validar: python3 -m pytest tests/ (105 testes passando)
+7. Verificar ausência de .env na main
+8. git push origin main
+9. gh issue close 60 --reason completed
+10. Mover card para Done
+```
+
+### Resultado obtido
+
+- Merge de develop na main executado sem conflitos
+- 105 testes passando na main (1.84s)
+- Nenhum arquivo .env incluído (apenas .env.example)
+- Branch develop preservada (não deletada)
+- Issue #60 fechada como completed
+- Card Kanban movido para Done
