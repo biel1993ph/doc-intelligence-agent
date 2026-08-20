@@ -17,7 +17,7 @@ def build_report(state: AgentState) -> dict:
     """
     analysis_result = state.get("analysis_result")
     discovered_files = state.get("discovered_files", [])
-    errors = list(state.get("errors", []))
+    errors: list[dict] = []
 
     if not analysis_result:
         errors.append({

@@ -1,4 +1,11 @@
-"""Definição e compilação do grafo LangGraph do agente."""
+"""Definição e compilação do grafo LangGraph do agente.
+
+Fluxo com paralelização:
+    receive_input → validate_input → discover_docs
+        → [read_readme, read_prd_docs] (paralelo / fan-out)
+        → merge_docs (fan-in / join)
+        → analyze_docs → build_report → present_result
+"""
 
 from langgraph.graph import StateGraph, END
 
@@ -7,7 +14,9 @@ from app.agent.nodes import (
     receive_input,
     validate_input,
     discover_docs,
-    read_docs,
+    read_readme,
+    read_prd_docs,
+    merge_docs,
     analyze_docs,
     build_report,
     present_result,
@@ -25,26 +34,29 @@ def _should_continue_after_discovery(state: AgentState) -> str:
     """Roteamento condicional após discover_docs."""
     if not state.get("discovered_files"):
         return END
-    return "read_docs"
+    return "read_readme"
 
 
-def _should_continue_after_read(state: AgentState) -> str:
-    """Roteamento condicional após read_docs."""
+def _should_continue_after_merge(state: AgentState) -> str:
+    """Roteamento condicional após merge_docs."""
     if not state.get("merged_context"):
         return END
     return "analyze_docs"
 
 
 def build_graph() -> StateGraph:
-    """Constrói e compila o grafo LangGraph com os 7 nós.
+    """Constrói e compila o grafo LangGraph com paralelização.
 
-    Sequência: receive_input → validate_input → discover_docs →
-    read_docs → analyze_docs → build_report → present_result
+    Sequência com fan-out/fan-in:
+        receive_input → validate_input → discover_docs
+            → [read_readme, read_prd_docs] (fan-out paralelo)
+            → merge_docs (fan-in / join)
+            → analyze_docs → build_report → present_result
 
     Roteamento condicional:
-    - validate_input → END se invalid
-    - discover_docs → END se discovered_files vazio
-    - read_docs → END se merged_context vazio
+        - validate_input → END se invalid
+        - discover_docs → END se discovered_files vazio
+        - merge_docs → END se merged_context vazio
 
     Returns:
         Grafo compilado pronto para execução.
@@ -55,7 +67,9 @@ def build_graph() -> StateGraph:
     graph.add_node("receive_input", receive_input)
     graph.add_node("validate_input", validate_input)
     graph.add_node("discover_docs", discover_docs)
-    graph.add_node("read_docs", read_docs)
+    graph.add_node("read_readme", read_readme)
+    graph.add_node("read_prd_docs", read_prd_docs)
+    graph.add_node("merge_docs", merge_docs)
     graph.add_node("analyze_docs", analyze_docs)
     graph.add_node("build_report", build_report)
     graph.add_node("present_result", present_result)
@@ -63,26 +77,36 @@ def build_graph() -> StateGraph:
     # Entry point
     graph.set_entry_point("receive_input")
 
-    # Edges sequenciais
+    # Edges sequenciais iniciais
     graph.add_edge("receive_input", "validate_input")
 
-    # Edges condicionais
+    # Roteamento condicional após validação
     graph.add_conditional_edges(
         "validate_input",
         _should_continue_after_validation,
     )
 
+    # Roteamento condicional após descoberta → fan-out
     graph.add_conditional_edges(
         "discover_docs",
         _should_continue_after_discovery,
     )
 
+    # Fan-out: discover_docs → [read_readme, read_prd_docs] (paralelo)
+    # Ambos os nós executam simultaneamente
+    graph.add_edge("discover_docs", "read_prd_docs")
+
+    # Fan-in: [read_readme, read_prd_docs] → merge_docs
+    graph.add_edge("read_readme", "merge_docs")
+    graph.add_edge("read_prd_docs", "merge_docs")
+
+    # Roteamento condicional após merge
     graph.add_conditional_edges(
-        "read_docs",
-        _should_continue_after_read,
+        "merge_docs",
+        _should_continue_after_merge,
     )
 
-    # Edges sequenciais restantes
+    # Edges sequenciais finais
     graph.add_edge("analyze_docs", "build_report")
     graph.add_edge("build_report", "present_result")
     graph.add_edge("present_result", END)

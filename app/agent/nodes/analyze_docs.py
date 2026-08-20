@@ -44,7 +44,7 @@ def analyze_docs(state: AgentState) -> dict:
         Dict parcial com analysis_result e erros.
     """
     merged_context = state.get("merged_context") or ""
-    errors = list(state.get("errors", []))
+    errors: list[dict] = []
 
     # Tentar análise via LLM
     llm_result = _try_llm_analysis(merged_context)
