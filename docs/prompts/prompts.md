@@ -641,3 +641,50 @@ Executar a Issue #62 do repositório biel1993ph/doc-intelligence-agent seguindo 
 - Fallback automático para heurística em caso de falha
 - Commits: 3 (build, feat, test)
 - Issue #62: PR criado aguardando review
+
+
+## 24. Execução da Issue #63 — Implementar paralelização simples no grafo LangGraph
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #63 — O grafo LangGraph era 100% sequencial (7 nós em linha). O requisito exige explicitamente ao menos uma paralelização simples (critério 7 — LangGraph, peso 0,75).
+
+### Objetivo do Prompt
+
+Implementar fan-out/fan-in no grafo LangGraph onde dois ou mais subprocessos executem simultaneamente e seus resultados sejam consolidados.
+
+### Prompt utilizado
+
+```
+Executar a Issue #63 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress no Project #3
+4. Criar branch feature/issue-63-paralelizacao-grafo
+5. Implementar:
+   - Fan-out: discover_docs dispara read_readme e read_prd_docs em paralelo
+   - Fan-in: merge_docs consolida merged_context antes de analyze_docs
+   - AgentState.errors com Annotated[list, operator.add] para merge aditivo
+   - Ajustar nós existentes para retornar apenas novos erros
+   - Atualizar README com diagrama do fluxo
+   - Testes validando ambos caminhos paralelos
+6. Validar: pytest tests/ (134 testes passando)
+7. Commits semânticos (feat, test, docs)
+8. Push + PR para develop
+9. Registrar prompts
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-63-paralelizacao-grafo`
+- PR: #76
+- Novos nós: `read_readme.py`, `read_prd_docs.py`, `merge_docs.py`
+- Alterados: `graph.py`, `state.py`, `discover_docs.py`, `analyze_docs.py`, `build_report.py`, `read_docs.py`, `__init__.py`, `README.md`
+- Testes: 134 passando (12 novos + 122 existentes)
+- Fluxo: sequencial + condicional + paralelo (fan-out/fan-in)
+- Commits: 4 (feat x2, test, docs)
+- Issue #63: PR #76 criado aguardando review

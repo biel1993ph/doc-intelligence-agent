@@ -23,7 +23,7 @@ def discover_docs(state: AgentState) -> dict:
     """
     repository_url = state.get("repository_url")
     local_files = state.get("local_files", [])
-    errors = list(state.get("errors", []))
+    errors: list[dict] = []
 
     # Determinar diretório raiz para busca
     root_path: str | None = None

@@ -13,15 +13,19 @@ Um agente que avalia documentação técnica de software a partir de um reposit�
 
 ## Arquitetura
 
-O agente utiliza **LangGraph** para orquestrar um grafo de 7 nós sequenciais com roteamento condicional:
+O agente utiliza **LangGraph** para orquestrar um grafo com execução sequencial, roteamento condicional e paralelização:
 
 ```
-receive_input → validate_input → discover_docs → read_docs → analyze_docs → build_report → present_result
+receive_input → validate_input → discover_docs
+    → [read_readme, read_prd_docs]  (fan-out paralelo)
+    → merge_docs                     (fan-in / join)
+    → analyze_docs → build_report → present_result
 ```
 
 Roteamento condicional encerra o fluxo antecipadamente em caso de:
 - Validação inválida (URL malformada, caminho inexistente)
 - Nenhum documento descoberto
+- Contexto consolidado vazio
 - Contexto consolidado vazio
 
 ## Estrutura do Projeto
