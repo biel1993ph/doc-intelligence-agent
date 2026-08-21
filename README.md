@@ -37,6 +37,30 @@ O agente utiliza **SQLite** para persistir o histórico de análises entre execu
 - Armazenamento: `data/analysis_history.db` (SQLite local, incluído no `.gitignore`)
 - LangGraph MemorySaver configurado como checkpointer
 
+## Integração Low-Code (n8n)
+
+O agente expõe uma API webhook para integração com ferramentas low-code (n8n, Make, Zapier):
+
+```bash
+# Iniciar API webhook (porta 8000)
+python3 -m app.main --api
+```
+
+**Endpoint:** `POST http://localhost:8000/api/analyze`
+
+```json
+{"url": "https://github.com/owner/repo"}
+```
+
+**Reprodução do fluxo n8n:**
+1. Instalar n8n: `docker run -it --rm -p 5678:5678 n8nio/n8n`
+2. Importar o fluxo: `docs/evidencias/n8n_flow.json`
+3. Configurar variável `DISCORD_WEBHOOK_URL` no n8n (se desejar notificação)
+4. Ativar o webhook trigger
+5. Enviar POST para o webhook do n8n com `{"url": "https://github.com/owner/repo"}`
+
+O fluxo n8n: Webhook Trigger → Chamar API de Análise → Notificar Discord + Responder.
+
 ## Estrutura do Projeto
 
 ```

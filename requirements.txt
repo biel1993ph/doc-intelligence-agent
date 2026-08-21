@@ -6,6 +6,8 @@ openai
 python-dotenv
 structlog
 tenacity
+fastapi
+uvicorn
 hypothesis
 pytest
 pytest-cov
