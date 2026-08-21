@@ -16,6 +16,7 @@ def generate_report_markdown(
     analysis_result: dict,
     discovered_files: list[str] | None = None,
     repository_metadata: dict | None = None,
+    analysis_history: list[dict] | None = None,
 ) -> str:
     """Gera relatório Markdown estruturado a partir do resultado da análise.
 
@@ -128,7 +129,29 @@ def generate_report_markdown(
             sections.append(f"| {dim.capitalize()} | {val} |")
         sections.append("")
 
-    # 7. Limitações
+    # 7. Histórico (se há análises anteriores)
+    if analysis_history:
+        sections.append("## Histórico\n")
+        current_score = analysis_result.get("score", 0)
+        prev_score = analysis_history[0].get("score", 0)
+        prev_date = analysis_history[0].get("analyzed_at", "desconhecida")[:10]
+
+        sections.append(f"**Evolução:** nota anterior {prev_score} → nota atual {current_score}\n")
+        sections.append(f"Última análise: {prev_date}\n")
+
+        if len(analysis_history) > 1:
+            sections.append("| Data | Nota | Problemas | Pontos fortes |")
+            sections.append("|------|------|-----------|---------------|")
+            for record in analysis_history[:5]:
+                date = record.get("analyzed_at", "")[:10]
+                score = record.get("score", 0)
+                findings = record.get("findings_count", 0)
+                strengths = record.get("strengths_count", 0)
+                sections.append(f"| {date} | {score}/10 | {findings} | {strengths} |")
+            sections.append("")
+        sections.append("")
+
+    # 8. Limitações
     sections.append("## Limitações\n")
     limitations = [
         "Análise baseada exclusivamente no conteúdo textual disponível.",

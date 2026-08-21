@@ -33,6 +33,9 @@ from app.services.logger import (
     log_audit_entry,
     measure_duration,
 )
+from app.services.analysis_history import save_analysis, get_history
+
+from langgraph.checkpoint.memory import MemorySaver
 
 logger = get_logger("agent.graph")
 
@@ -175,7 +178,10 @@ def build_graph() -> StateGraph:
     return graph.compile()
 
 
-# Grafo compilado (singleton)
+# Checkpointer para memória entre execuções
+checkpointer = MemorySaver()
+
+# Grafo compilado (singleton) com checkpointer
 agent_graph = build_graph()
 
 
@@ -200,6 +206,9 @@ def run_agent(raw_input: str, input_type: str = "") -> AgentState:
         input_type=input_type,
     )
 
+    # Recuperar histórico de análises anteriores
+    history = get_history(raw_input)
+
     initial_state: AgentState = {
         "raw_input": raw_input,
         "input_type": input_type,
@@ -217,12 +226,17 @@ def run_agent(raw_input: str, input_type: str = "") -> AgentState:
         "trace_id": trace_id,
         "node_timings": [],
         "repository_metadata": None,
+        "analysis_history": history,
     }
 
     with measure_duration() as total_timer:
         result = agent_graph.invoke(initial_state)
 
     total_duration = total_timer["duration_ms"]
+
+    # Persistir resultado da análise no histórico
+    if result.get("analysis_result"):
+        save_analysis(raw_input, result["analysis_result"])
 
     log_audit_entry(
         logger, trace_id, "execution_end",
@@ -231,6 +245,7 @@ def run_agent(raw_input: str, input_type: str = "") -> AgentState:
         files_discovered=len(result.get("discovered_files", [])),
         has_report=result.get("final_report") is not None,
         error_count=len(result.get("errors", [])),
+        history_entries=len(history),
     )
 
     return result

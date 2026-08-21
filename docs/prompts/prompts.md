@@ -831,3 +831,48 @@ Executar a Issue #66 seguindo issue-executor.md:
 - Testes: 183 passando (16 novos + 167 existentes)
 - Tool funcional com validação, retry, schema, tratamento de erros
 - Issue #66: PR #79 criado
+
+
+## 28. Execução da Issue #67 — Implementar memória com checkpointer e histórico
+
+### Data
+
+2025-08-21
+
+### Contexto
+
+Issue #67 — O agente era stateless entre execuções. O critério 9 exige estratégia de memória que permita utilizar informações de interações anteriores.
+
+### Objetivo do Prompt
+
+Implementar memória persistente com SQLite + LangGraph MemorySaver, permitindo recuperar histórico de análises anteriores do mesmo repositório e incluir evolução no relatório.
+
+### Prompt utilizado
+
+```
+Executar a Issue #67 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Mover card In Progress
+3. Branch feature/issue-67-memoria-checkpointer
+4. Implementar:
+   - analysis_history.py: SQLite com save_analysis/get_history/generate_source_key
+   - LangGraph MemorySaver como checkpointer
+   - run_agent: recupera histórico antes, salva após execução
+   - AgentState com analysis_history
+   - Relatório com seção "Histórico" (evolução da nota)
+   - .gitignore com data/
+   - README documenta estratégia
+   - 13 testes (persistência, recuperação, relatório, E2E)
+5. Validar: pytest tests/ (196 passed)
+6. Commit + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-67-memoria-checkpointer`
+- PR: #80
+- Novo: `app/services/analysis_history.py`, `tests/test_analysis_history.py`
+- Alterados: graph.py, state.py, build_report.py, report_service.py, .gitignore, README.md, test_smoke.py
+- Testes: 196 passando (13 novos + 183 existentes)
+- Memória SQLite funcional com evolução de nota no relatório
+- Issue #67: PR #80 criado
