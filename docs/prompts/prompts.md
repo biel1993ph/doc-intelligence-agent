@@ -785,3 +785,49 @@ Executar a Issue #65 do repositório biel1993ph/doc-intelligence-agent seguindo 
 - 5 camadas de defesa: detecção, delimitadores, instrução, system prompt, validação pós-LLM
 - Commits: 3 (feat, test, docs)
 - Issue #65: PR #78 criado aguardando review
+
+
+## 27. Execução da Issue #66 — Integrar tool via API externa (GitHub API)
+
+### Data
+
+2025-08-21
+
+### Contexto
+
+Issue #66 — O requisito exige pelo menos uma tool funcional integrada via API externa. Implementar fetch_repository_metadata() consumindo a GitHub REST API.
+
+### Objetivo do Prompt
+
+Implementar tool que busca metadados de repositório via GitHub API, com validação de entrada/saída, tratamento de erros, retry e integração no relatório.
+
+### Prompt utilizado
+
+```
+Executar a Issue #66 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Ler issue, mover card In Progress
+3. Criar branch feature/issue-66-github-api-tool
+4. Implementar:
+   - fetch_repository_metadata() em repo_tools.py (GitHub REST API)
+   - parse_github_url() para extrair owner/repo
+   - RepositoryMetadata TypedDict (schema de saída)
+   - Tratamento: 404, 403, timeout, conexão + retry tenacity
+   - GITHUB_TOKEN opcional via env
+   - repository_metadata no AgentState
+   - Chamada em discover_docs (quando URL é GitHub)
+   - Seção "Informações do Repositório" no relatório
+   - Testes com mock (16 testes)
+5. Validar: pytest tests/ (183 passed)
+6. Commits semânticos + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-66-github-api-tool`
+- PR: #79
+- Alterados: repo_tools.py, state.py, discover_docs.py, build_report.py, report_service.py, graph.py, .env.example
+- Novo: tests/test_github_api_tool.py
+- Testes: 183 passando (16 novos + 167 existentes)
+- Tool funcional com validação, retry, schema, tratamento de erros
+- Issue #66: PR #79 criado

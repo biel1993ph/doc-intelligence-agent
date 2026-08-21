@@ -216,6 +216,7 @@ def run_agent(raw_input: str, input_type: str = "") -> AgentState:
         "errors": [],
         "trace_id": trace_id,
         "node_timings": [],
+        "repository_metadata": None,
     }
 
     with measure_duration() as total_timer:
