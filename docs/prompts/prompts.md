@@ -688,3 +688,53 @@ Executar a Issue #63 do repositório biel1993ph/doc-intelligence-agent seguindo 
 - Fluxo: sequencial + condicional + paralelo (fan-out/fan-in)
 - Commits: 4 (feat x2, test, docs)
 - Issue #63: PR #76 criado aguardando review
+
+
+## 25. Execução da Issue #64 — Implementar observabilidade com logs estruturados e trace
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #64 — O projeto não possuía nenhum sinal de observabilidade. Não existia `import logging` em nenhum arquivo. A única forma de rastrear erros era a lista `errors` no AgentState, que é efêmera.
+
+### Objetivo do Prompt
+
+Implementar sistema de observabilidade com logs estruturados (JSON) e trace/auditoria, permitindo reconstruir uma execução completa do agente. Adicionar retry para chamadas HTTP.
+
+### Prompt utilizado
+
+```
+Executar a Issue #64 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress no Project #3
+4. Criar branch feature/issue-64-observabilidade-logs-trace
+5. Implementar:
+   - structlog com JSON formatter e LOG_LEVEL configurável
+   - trace_id UUID por execução para correlação
+   - Wrapper _instrument_node que mede duration_ms e loga entrada/saída
+   - Auditoria: execution_start, routing_decisions, execution_end
+   - AgentState com trace_id e node_timings
+   - Retry com tenacity em repo_tools (max 3 tentativas, backoff)
+   - Evidência de execução em docs/evidencias/
+   - Testes de observabilidade (15 testes)
+6. Validar: pytest tests/ (149 testes passando)
+7. Commits semânticos (feat x3, test, docs)
+8. Push + PR para develop
+9. Registrar prompts
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-64-observabilidade-logs-trace`
+- PR: #77
+- Novos arquivos: `app/services/logger.py`, `tests/test_observability.py`, `docs/evidencias/execucao_exemplo.json`
+- Alterados: `app/agent/graph.py`, `app/agent/state.py`, `app/tools/repo_tools.py`, `requirements.txt`, `tests/test_smoke.py`
+- Testes: 149 passando (15 novos + 134 existentes)
+- Dois sinais de observabilidade: logs JSON estruturados + trace/auditoria com node_timings
+- Retry com tenacity para chamadas HTTP
+- Commits: 5 (feat x3, test, docs)
+- Issue #64: PR #77 criado aguardando review

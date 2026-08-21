@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import requests
 from git import Repo, GitCommandError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 
 def validate_repository_url(url: str) -> tuple[bool, str]:
@@ -37,17 +38,28 @@ def validate_repository_url(url: str) -> tuple[bool, str]:
 
     # Validação de acessibilidade
     try:
-        response = requests.head(url, timeout=30, allow_redirects=True)
+        response = _request_with_retry(url)
         if response.status_code >= 400:
             return False, f"URL inacessível: status HTTP {response.status_code}."
     except requests.exceptions.Timeout:
         return False, "URL inacessível: timeout de 30 segundos excedido."
     except requests.exceptions.ConnectionError:
-        return False, "URL inacessível: erro de conexão."
+        return False, "URL inacessível: erro de conexão (após retry)."
     except requests.exceptions.RequestException as e:
         return False, f"URL inacessível: {e}"
 
     return True, "URL válida e acessível."
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=5),
+    retry=retry_if_exception_type((requests.exceptions.ConnectionError, requests.exceptions.Timeout)),
+    reraise=True,
+)
+def _request_with_retry(url: str) -> requests.Response:
+    """Faz requisição HEAD com retry limitado (max 2 retentativas)."""
+    return requests.head(url, timeout=30, allow_redirects=True)
 
 
 def clone_or_open_repository(url: str) -> tuple[str, str | None]:

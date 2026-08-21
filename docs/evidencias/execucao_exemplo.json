@@ -1,0 +1,50 @@
+{
+  "descricao": "Evidência de execução completa do agente com observabilidade",
+  "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2",
+  "sinais_observabilidade": {
+    "sinal_1": "Logs estruturados JSON com structlog",
+    "sinal_2": "Trace/auditoria com trace_id UUID e node_timings"
+  },
+  "correlacao": "Todos os logs de uma execução compartilham o mesmo trace_id, permitindo filtrar e reconstruir o fluxo completo",
+  "logs_estruturados": [
+    {"event": "execution_start", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "raw_input": "/var/folders/.../tmp...", "level": "info"},
+    {"event": "node_start", "node": "receive_input", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "receive_input", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.0, "success": true, "level": "info"},
+    {"event": "node_start", "node": "validate_input", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "validate_input", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.04, "success": true, "level": "info"},
+    {"event": "node_start", "node": "discover_docs", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "discover_docs", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.15, "success": true, "level": "info"},
+    {"event": "node_start", "node": "read_prd_docs", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "read_prd_docs", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.01, "success": true, "level": "info"},
+    {"event": "node_start", "node": "read_readme", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "read_readme", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.05, "success": true, "level": "info"},
+    {"event": "node_start", "node": "merge_docs", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "merge_docs", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.04, "success": true, "level": "info"},
+    {"event": "node_start", "node": "analyze_docs", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "analyze_docs", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.08, "success": true, "level": "info"},
+    {"event": "node_start", "node": "build_report", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "build_report", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.01, "success": true, "level": "info"},
+    {"event": "node_start", "node": "present_result", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "level": "info"},
+    {"event": "node_end", "node": "present_result", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "duration_ms": 0.0, "success": true, "level": "info"},
+    {"event": "execution_end", "trace_id": "c3599c9a-7031-4680-a95e-19154389cbe2", "total_duration_ms": 1.2, "validation_status": "valid", "files_discovered": 1, "has_report": true, "error_count": 0, "level": "info"}
+  ],
+  "node_timings": [
+    {"node": "receive_input", "duration_ms": 0.0},
+    {"node": "validate_input", "duration_ms": 0.04},
+    {"node": "discover_docs", "duration_ms": 0.15},
+    {"node": "read_prd_docs", "duration_ms": 0.01},
+    {"node": "read_readme", "duration_ms": 0.05},
+    {"node": "merge_docs", "duration_ms": 0.04},
+    {"node": "analyze_docs", "duration_ms": 0.08},
+    {"node": "build_report", "duration_ms": 0.01},
+    {"node": "present_result", "duration_ms": 0.0}
+  ],
+  "analise_da_execucao": {
+    "fluxo_identificado": "receive_input → validate_input → discover_docs → [read_readme, read_prd_docs] → merge_docs → analyze_docs → build_report → present_result",
+    "decisoes_relevantes": "Validação passou (caminho local válido), 1 arquivo descoberto (README.md), LLM indisponível (fallback heurístico usado)",
+    "erros": "Nenhum",
+    "latencia_total_ms": 1.2,
+    "no_mais_lento": "discover_docs (0.15ms)",
+    "resiliencia": "Fallback heurístico ativado automaticamente quando LLM indisponível"
+  }
+}
