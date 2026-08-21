@@ -34,3 +34,5 @@ class AgentState(TypedDict):
     analysis_result: dict | None
     final_report: str | None
     errors: Annotated[list[ErrorEntry], operator.add]
+    trace_id: str
+    node_timings: Annotated[list[dict], operator.add]
