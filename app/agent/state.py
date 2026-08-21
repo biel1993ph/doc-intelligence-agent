@@ -37,3 +37,4 @@ class AgentState(TypedDict):
     trace_id: str
     node_timings: Annotated[list[dict], operator.add]
     repository_metadata: dict | None
+    analysis_history: list[dict]

@@ -26,7 +26,16 @@ Roteamento condicional encerra o fluxo antecipadamente em caso de:
 - Validação inválida (URL malformada, caminho inexistente)
 - Nenhum documento descoberto
 - Contexto consolidado vazio
-- Contexto consolidado vazio
+
+## Memória e Histórico
+
+O agente utiliza **SQLite** para persistir o histórico de análises entre execuções:
+
+- Cada análise é salva com: repositório, data, nota, dimensões, quantidade de problemas/pontos fortes
+- Ao analisar um repositório já avaliado anteriormente, o relatório inclui seção "Histórico" com evolução da nota
+- Chave de agrupamento: hash MD5 da entrada normalizada (URL ou caminho)
+- Armazenamento: `data/analysis_history.db` (SQLite local, incluído no `.gitignore`)
+- LangGraph MemorySaver configurado como checkpointer
 
 ## Estrutura do Projeto
 
