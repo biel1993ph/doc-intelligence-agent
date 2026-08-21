@@ -36,3 +36,4 @@ class AgentState(TypedDict):
     errors: Annotated[list[ErrorEntry], operator.add]
     trace_id: str
     node_timings: Annotated[list[dict], operator.add]
+    repository_metadata: dict | None

@@ -17,6 +17,7 @@ def build_report(state: AgentState) -> dict:
     """
     analysis_result = state.get("analysis_result")
     discovered_files = state.get("discovered_files", [])
+    repository_metadata = state.get("repository_metadata")
     errors: list[dict] = []
 
     if not analysis_result:
@@ -29,7 +30,7 @@ def build_report(state: AgentState) -> dict:
             "errors": errors,
         }
 
-    report = generate_report_markdown(analysis_result, discovered_files)
+    report = generate_report_markdown(analysis_result, discovered_files, repository_metadata)
 
     return {
         "final_report": report,
