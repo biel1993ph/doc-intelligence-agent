@@ -876,3 +876,46 @@ Executar a Issue #67 seguindo issue-executor.md:
 - Testes: 196 passando (13 novos + 183 existentes)
 - Memória SQLite funcional com evolução de nota no relatório
 - Issue #67: PR #80 criado
+
+
+## 29. Execução da Issue #68 — Integrar automação low-code/no-code (n8n)
+
+### Data
+
+2025-08-21
+
+### Contexto
+
+Issue #68 — O projeto não possuía integração low-code/no-code. Critério 14 exige automação visual integrada com gatilho, integração e saída observável.
+
+### Objetivo do Prompt
+
+Implementar endpoint webhook /api/analyze + fluxo n8n exportado + instruções de reprodução no README.
+
+### Prompt utilizado
+
+```
+Executar a Issue #68 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Mover card In Progress
+3. Branch feature/issue-68-n8n-webhook-integration
+4. Implementar:
+   - app/api/webhook.py: POST /api/analyze com Pydantic schema
+   - app/main.py: flag --api para servidor webhook
+   - docs/evidencias/n8n_flow.json: fluxo n8n exportado
+   - requirements.txt: +fastapi +uvicorn
+   - README: instruções de reprodução
+   - 7 testes com TestClient
+5. Validar: pytest tests/ (203 passed)
+6. Commit + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-68-n8n-webhook-integration`
+- PR: #81
+- Novos: `app/api/webhook.py`, `docs/evidencias/n8n_flow.json`, `tests/test_webhook_api.py`
+- Alterados: `app/main.py`, `requirements.txt`, `README.md`
+- Testes: 203 passando (7 novos + 196 existentes)
+- Endpoint funcional + fluxo n8n + instruções de reprodução
+- Issue #68: PR #81 criado
