@@ -738,3 +738,50 @@ Executar a Issue #64 do repositório biel1993ph/doc-intelligence-agent seguindo 
 - Retry com tenacity para chamadas HTTP
 - Commits: 5 (feat x3, test, docs)
 - Issue #64: PR #77 criado aguardando review
+
+
+## 26. Execução da Issue #65 — Implementar cenário adversarial de prompt injection
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #65 — O requisito exige demonstrar pelo menos um cenário adversarial envolvendo prompt injection, comprovando que conteúdos externos não substituem as regras da aplicação.
+
+### Objetivo do Prompt
+
+Implementar proteção contra prompt injection e demonstrar com testes automatizados que tentativas de manipulação são bloqueadas.
+
+### Prompt utilizado
+
+```
+Executar a Issue #65 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress no Project #3
+4. Criar branch feature/issue-65-prompt-injection-adversarial
+5. Implementar:
+   - sanitizer_prompt.py: detecção de 15+ padrões de injection (EN/PT)
+   - Delimitadores UNTRUSTED no user_message de analyze_docs
+   - Instrução explícita ao LLM para ignorar comandos no conteúdo
+   - Validação pós-LLM rejeitando respostas com vazamento
+   - Testes adversariais E2E (18 testes)
+   - Evidência em docs/evidencias/prompt_injection.json
+6. Validar: pytest tests/ (167 testes passando)
+7. Commits semânticos (feat, test, docs)
+8. Push + PR para develop
+9. Registrar prompts
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-65-prompt-injection-adversarial`
+- PR: #78
+- Novos arquivos: `app/services/sanitizer_prompt.py`, `tests/test_prompt_injection.py`, `docs/evidencias/prompt_injection.json`
+- Alterados: `app/agent/nodes/analyze_docs.py`
+- Testes: 167 passando (18 novos + 149 existentes)
+- 5 camadas de defesa: detecção, delimitadores, instrução, system prompt, validação pós-LLM
+- Commits: 3 (feat, test, docs)
+- Issue #65: PR #78 criado aguardando review
