@@ -76,17 +76,18 @@ def test_import_gradio_app() -> None:
 
 
 def test_agent_state_has_13_fields() -> None:
-    """AgentState contém exatamente 13 campos tipados."""
+    """AgentState contém exatamente 15 campos tipados."""
     from app.agent.state import AgentState
 
     expected_fields = {
         "raw_input", "input_type", "validation_status", "validation_message",
         "repository_url", "local_files", "discovered_files", "readme_content",
         "prd_content", "merged_context", "analysis_result", "final_report", "errors",
+        "trace_id", "node_timings",
     }
 
     assert set(AgentState.__annotations__.keys()) == expected_fields
-    assert len(AgentState.__annotations__) == 13
+    assert len(AgentState.__annotations__) == 15
 
 
 # --- Ausência de dependências circulares ---
