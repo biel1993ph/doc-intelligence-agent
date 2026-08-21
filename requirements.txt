@@ -4,6 +4,8 @@ gitpython
 requests
 openai
 python-dotenv
+structlog
+tenacity
 hypothesis
 pytest
 pytest-cov
