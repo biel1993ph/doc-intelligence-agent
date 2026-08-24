@@ -51,8 +51,8 @@ def generate_report_markdown(
     # 2. Informações do Repositório (se disponível)
     if repository_metadata:
         sections.append("## Informações do Repositório\n")
-        sections.append(f"| Campo | Valor |")
-        sections.append(f"|-------|-------|")
+        sections.append("| Campo | Valor |")
+        sections.append("|-------|-------|")
         sections.append(f"| Nome | {repository_metadata.get('full_name', 'N/A')} |")
         if repository_metadata.get("description"):
             sections.append(f"| Descrição | {repository_metadata['description']} |")

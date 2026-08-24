@@ -1,8 +1,12 @@
 """Ferramentas de validação de URL e clonagem de repositório."""
 
+import logging
+import os
+import re
 import tempfile
 import shutil
 from pathlib import Path
+from typing import TypedDict
 from urllib.parse import urlparse
 
 import requests
@@ -107,11 +111,6 @@ def clone_or_open_repository(url: str) -> tuple[str, str | None]:
             shutil.rmtree(tmp_dir, ignore_errors=True)
         return "", f"Erro inesperado: {e}"
 
-
-import logging
-import os
-import re
-from typing import TypedDict
 
 logger = logging.getLogger(__name__)
 
