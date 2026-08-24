@@ -919,3 +919,43 @@ Executar a Issue #68 seguindo issue-executor.md:
 - Testes: 203 passando (7 novos + 196 existentes)
 - Endpoint funcional + fluxo n8n + instruções de reprodução
 - Issue #68: PR #81 criado
+
+
+## 30. Execução da Issue #69 — Code review com IA e testes E2E com priorização por risco
+
+### Data
+
+2025-08-21
+
+### Contexto
+
+Issue #69 — Critério 12 exige evidência de QA com IA: code review de alteração real, testes E2E gerados com IA, e priorização por risco documentada.
+
+### Objetivo do Prompt
+
+Documentar code review com IA de PR real, criar testes E2E priorizados por risco, e documentar metodologia de priorização.
+
+### Prompt utilizado
+
+```
+Executar a Issue #69 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Mover card In Progress
+3. Branch feature/issue-69-qa-ia-e2e-priorizacao
+4. Implementar:
+   - docs/qa/code-review-ia.md: evidência de review do PR #78 com IA
+   - tests/test_e2e.py: 5 testes E2E (gerados com apoio de IA)
+   - docs/qa/priorizacao-risco.md: 10 cenários priorizados por criticidade
+5. Validar: pytest tests/ (208 passed)
+6. Commit + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-69-qa-ia-e2e-priorizacao`
+- PR: #82
+- Novos: `docs/qa/code-review-ia.md`, `docs/qa/priorizacao-risco.md`, `tests/test_e2e.py`
+- Testes: 208 passando (5 novos E2E + 203 existentes)
+- Code review documentado sobre PR #78 (real)
+- Priorização com metodologia Impacto × Probabilidade × Severidade
+- Issue #69: PR #82 criado
