@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from app.agent.state import AgentState
-from app.tools.repo_tools import clone_or_open_repository
+from app.tools.repo_tools import clone_or_open_repository, fetch_repository_metadata
 from app.tools.file_tools import find_documentation_files, VALID_EXTENSIONS
 
 
@@ -23,10 +23,11 @@ def discover_docs(state: AgentState) -> dict:
     """
     repository_url = state.get("repository_url")
     local_files = state.get("local_files", [])
-    errors = list(state.get("errors", []))
+    errors: list[dict] = []
 
     # Determinar diretório raiz para busca
     root_path: str | None = None
+    repository_metadata = None
 
     if repository_url:
         # Clonar repositório remoto
@@ -38,6 +39,12 @@ def discover_docs(state: AgentState) -> dict:
                 "errors": errors,
             }
         root_path = path
+
+        # Buscar metadados via GitHub API (se for URL do GitHub)
+        metadata, meta_error = fetch_repository_metadata(repository_url)
+        if meta_error:
+            errors.append({"node": "discover_docs", "message": f"Metadados: {meta_error}"})
+        repository_metadata = metadata
 
     elif local_files:
         # Usar caminho local
@@ -96,7 +103,10 @@ def discover_docs(state: AgentState) -> dict:
     root = Path(root_path)
     absolute_files = [str((root / f).resolve()) for f in relative_files]
 
-    return {
+    result = {
         "discovered_files": absolute_files,
         "errors": errors,
+        "repository_metadata": repository_metadata,
     }
+
+    return result

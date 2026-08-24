@@ -24,7 +24,7 @@ def read_docs(state: AgentState) -> dict:
         Dict parcial com readme_content, prd_content, merged_context e erros.
     """
     discovered_files = state.get("discovered_files", [])
-    errors = list(state.get("errors", []))
+    errors: list[dict] = []
 
     readme_content: str | None = None
     prd_content: str | None = None

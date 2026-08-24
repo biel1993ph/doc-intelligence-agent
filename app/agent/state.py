@@ -1,6 +1,7 @@
 """Estado tipado do agente de análise de documentação."""
 
-from typing import TypedDict
+import operator
+from typing import Annotated, TypedDict
 
 
 class ErrorEntry(TypedDict):
@@ -15,6 +16,9 @@ class AgentState(TypedDict):
 
     Contém os 13 campos tipados que representam o ciclo completo
     de análise de documentação de software.
+
+    O campo 'errors' utiliza Annotated com operator.add para suportar
+    merge aditivo durante execução paralela (fan-out/fan-in).
     """
 
     raw_input: str
@@ -29,4 +33,8 @@ class AgentState(TypedDict):
     merged_context: str | None
     analysis_result: dict | None
     final_report: str | None
-    errors: list[ErrorEntry]
+    errors: Annotated[list[ErrorEntry], operator.add]
+    trace_id: str
+    node_timings: Annotated[list[dict], operator.add]
+    repository_metadata: dict | None
+    analysis_history: list[dict]

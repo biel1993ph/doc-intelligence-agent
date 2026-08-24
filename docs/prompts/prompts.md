@@ -509,3 +509,494 @@ Executar a Issue #59 do repositório biel1993ph/doc-intelligence-agent seguindo 
 - Testes: 105 passando, sem regressão
 - Issue #59: fechada como completed
 - Card Kanban: movido para Done
+
+
+## 21. Execução da Issue #60 — Mergear develop na main
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #60 — A branch main continha apenas o commit inicial. Todo o código funcional estava na develop. O requisito do projeto avaliativo exige que a main contenha a versão final e funcional.
+
+### Objetivo do Prompt
+
+Executar o merge de develop na main seguindo o fluxo definido na issue: checkout main → merge develop → validar testes → push → fechar issue.
+
+### Prompt utilizado
+
+```
+Executar a Issue #60 do repositório biel1993ph/doc-intelligence-agent:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress
+4. git checkout main && git pull origin main
+5. git merge develop --no-edit
+6. Validar: python3 -m pytest tests/ (105 testes passando)
+7. Verificar ausência de .env na main
+8. git push origin main
+9. gh issue close 60 --reason completed
+10. Mover card para Done
+```
+
+### Resultado obtido
+
+- Merge de develop na main executado sem conflitos
+- 105 testes passando na main (1.84s)
+- Nenhum arquivo .env incluído (apenas .env.example)
+- Branch develop preservada (não deletada)
+- Issue #60 fechada como completed
+- Card Kanban movido para Done
+
+
+## 22. Execução da Issue #61 — Pipeline CI/CD com GitHub Actions
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #61 — O projeto não possuía pipeline de CI/CD. O requisito exige pipeline com lint, testes e build/validação equivalente (critério 13 — DevOps inteligente).
+
+### Objetivo do Prompt
+
+Criar workflow GitHub Actions que execute automaticamente lint (ruff), testes (pytest) e validação de imports a cada push/PR nas branches develop e main.
+
+### Prompt utilizado
+
+```
+Executar a Issue #61 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress
+4. Criar branch feature/issue-61-ci-cd-pipeline
+5. Criar .github/workflows/ci.yml (checkout, setup-python 3.11, cache pip, install deps, ruff check, validate imports, pytest)
+6. Adicionar ruff ao requirements.txt
+7. Criar ruff.toml com regras adequadas
+8. Corrigir lint errors no código existente (variáveis ambíguas E741)
+9. Validar localmente (ruff check + pytest)
+10. Commit semântico + Push + PR + Merge squash
+11. Fechar issue e mover card para Done
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-61-ci-cd-pipeline`
+- PR: #74 (squash merged)
+- Arquivos criados: `.github/workflows/ci.yml`, `ruff.toml`
+- Arquivos alterados: `requirements.txt` (+ruff), `app/agent/nodes/analyze_docs.py` (fix E741)
+- Validação local: ruff check (0 erros), pytest (105 passed), imports OK
+- Issue #61: fechada como completed
+- Card Kanban: movido para Done
+
+
+## 23. Execução da Issue #62 — Integrar LLM na análise de documentação
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #62 — O nó `analyze_docs` utilizava análise puramente heurística (keyword matching, regex, contagem de padrões). O arquivo `app/prompts/analysis_prompt.md` existia com prompt detalhado para LLM, mas nunca era chamado no código. Sem LLM integrado, não existia "decisão do modelo" no grafo.
+
+### Objetivo do Prompt
+
+Integrar chamada a LLM (OpenAI ou compatível) no nó `analyze_docs`, utilizando o prompt já existente em `app/prompts/analysis_prompt.md`, com fallback para análise heurística caso a API esteja indisponível.
+
+### Prompt utilizado
+
+```
+Executar a Issue #62 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress
+4. Criar branch feature/issue-62-integrar-llm-analyze-docs
+5. Implementar:
+   - Integração OpenAI no analyze_docs.py com prompt de analysis_prompt.md
+   - Modelo via LLM_MODEL, API key via OPENAI_API_KEY, base URL via OPENAI_BASE_URL
+   - Parsing e validação de resposta JSON do LLM
+   - Regras determinísticas validam formato/limites sobre resultado do LLM
+   - Fallback para heurística se LLM falhar (timeout 60s, rate limit, parse error)
+   - Testes com mock da API (17 testes)
+   - Atualizar requirements.txt (openai, python-dotenv)
+   - Atualizar .env.example com OPENAI_BASE_URL
+6. Validar: pytest tests/ (122 testes passando)
+7. Commits semânticos (build, feat, test)
+8. Push + PR para develop
+9. Registrar prompts
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-62-integrar-llm-analyze-docs`
+- PR: #75
+- Arquivos alterados: `app/agent/nodes/analyze_docs.py`, `requirements.txt`, `.env.example`
+- Arquivo criado: `tests/test_analyze_docs_llm.py`
+- Testes: 122 passando (17 novos + 105 existentes)
+- Separação clara: LLM decide avaliação qualitativa, regras determinísticas validam formato/limites
+- Fallback automático para heurística em caso de falha
+- Commits: 3 (build, feat, test)
+- Issue #62: PR criado aguardando review
+
+
+## 24. Execução da Issue #63 — Implementar paralelização simples no grafo LangGraph
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #63 — O grafo LangGraph era 100% sequencial (7 nós em linha). O requisito exige explicitamente ao menos uma paralelização simples (critério 7 — LangGraph, peso 0,75).
+
+### Objetivo do Prompt
+
+Implementar fan-out/fan-in no grafo LangGraph onde dois ou mais subprocessos executem simultaneamente e seus resultados sejam consolidados.
+
+### Prompt utilizado
+
+```
+Executar a Issue #63 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress no Project #3
+4. Criar branch feature/issue-63-paralelizacao-grafo
+5. Implementar:
+   - Fan-out: discover_docs dispara read_readme e read_prd_docs em paralelo
+   - Fan-in: merge_docs consolida merged_context antes de analyze_docs
+   - AgentState.errors com Annotated[list, operator.add] para merge aditivo
+   - Ajustar nós existentes para retornar apenas novos erros
+   - Atualizar README com diagrama do fluxo
+   - Testes validando ambos caminhos paralelos
+6. Validar: pytest tests/ (134 testes passando)
+7. Commits semânticos (feat, test, docs)
+8. Push + PR para develop
+9. Registrar prompts
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-63-paralelizacao-grafo`
+- PR: #76
+- Novos nós: `read_readme.py`, `read_prd_docs.py`, `merge_docs.py`
+- Alterados: `graph.py`, `state.py`, `discover_docs.py`, `analyze_docs.py`, `build_report.py`, `read_docs.py`, `__init__.py`, `README.md`
+- Testes: 134 passando (12 novos + 122 existentes)
+- Fluxo: sequencial + condicional + paralelo (fan-out/fan-in)
+- Commits: 4 (feat x2, test, docs)
+- Issue #63: PR #76 criado aguardando review
+
+
+## 25. Execução da Issue #64 — Implementar observabilidade com logs estruturados e trace
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #64 — O projeto não possuía nenhum sinal de observabilidade. Não existia `import logging` em nenhum arquivo. A única forma de rastrear erros era a lista `errors` no AgentState, que é efêmera.
+
+### Objetivo do Prompt
+
+Implementar sistema de observabilidade com logs estruturados (JSON) e trace/auditoria, permitindo reconstruir uma execução completa do agente. Adicionar retry para chamadas HTTP.
+
+### Prompt utilizado
+
+```
+Executar a Issue #64 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress no Project #3
+4. Criar branch feature/issue-64-observabilidade-logs-trace
+5. Implementar:
+   - structlog com JSON formatter e LOG_LEVEL configurável
+   - trace_id UUID por execução para correlação
+   - Wrapper _instrument_node que mede duration_ms e loga entrada/saída
+   - Auditoria: execution_start, routing_decisions, execution_end
+   - AgentState com trace_id e node_timings
+   - Retry com tenacity em repo_tools (max 3 tentativas, backoff)
+   - Evidência de execução em docs/evidencias/
+   - Testes de observabilidade (15 testes)
+6. Validar: pytest tests/ (149 testes passando)
+7. Commits semânticos (feat x3, test, docs)
+8. Push + PR para develop
+9. Registrar prompts
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-64-observabilidade-logs-trace`
+- PR: #77
+- Novos arquivos: `app/services/logger.py`, `tests/test_observability.py`, `docs/evidencias/execucao_exemplo.json`
+- Alterados: `app/agent/graph.py`, `app/agent/state.py`, `app/tools/repo_tools.py`, `requirements.txt`, `tests/test_smoke.py`
+- Testes: 149 passando (15 novos + 134 existentes)
+- Dois sinais de observabilidade: logs JSON estruturados + trace/auditoria com node_timings
+- Retry com tenacity para chamadas HTTP
+- Commits: 5 (feat x3, test, docs)
+- Issue #64: PR #77 criado aguardando review
+
+
+## 26. Execução da Issue #65 — Implementar cenário adversarial de prompt injection
+
+### Data
+
+2025-08-20
+
+### Contexto
+
+Issue #65 — O requisito exige demonstrar pelo menos um cenário adversarial envolvendo prompt injection, comprovando que conteúdos externos não substituem as regras da aplicação.
+
+### Objetivo do Prompt
+
+Implementar proteção contra prompt injection e demonstrar com testes automatizados que tentativas de manipulação são bloqueadas.
+
+### Prompt utilizado
+
+```
+Executar a Issue #65 do repositório biel1993ph/doc-intelligence-agent seguindo o fluxo GitFlow:
+1. Sincronizar develop
+2. Ler issue via gh CLI
+3. Mover card para In Progress no Project #3
+4. Criar branch feature/issue-65-prompt-injection-adversarial
+5. Implementar:
+   - sanitizer_prompt.py: detecção de 15+ padrões de injection (EN/PT)
+   - Delimitadores UNTRUSTED no user_message de analyze_docs
+   - Instrução explícita ao LLM para ignorar comandos no conteúdo
+   - Validação pós-LLM rejeitando respostas com vazamento
+   - Testes adversariais E2E (18 testes)
+   - Evidência em docs/evidencias/prompt_injection.json
+6. Validar: pytest tests/ (167 testes passando)
+7. Commits semânticos (feat, test, docs)
+8. Push + PR para develop
+9. Registrar prompts
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-65-prompt-injection-adversarial`
+- PR: #78
+- Novos arquivos: `app/services/sanitizer_prompt.py`, `tests/test_prompt_injection.py`, `docs/evidencias/prompt_injection.json`
+- Alterados: `app/agent/nodes/analyze_docs.py`
+- Testes: 167 passando (18 novos + 149 existentes)
+- 5 camadas de defesa: detecção, delimitadores, instrução, system prompt, validação pós-LLM
+- Commits: 3 (feat, test, docs)
+- Issue #65: PR #78 criado aguardando review
+
+
+## 27. Execução da Issue #66 — Integrar tool via API externa (GitHub API)
+
+### Data
+
+2025-08-21
+
+### Contexto
+
+Issue #66 — O requisito exige pelo menos uma tool funcional integrada via API externa. Implementar fetch_repository_metadata() consumindo a GitHub REST API.
+
+### Objetivo do Prompt
+
+Implementar tool que busca metadados de repositório via GitHub API, com validação de entrada/saída, tratamento de erros, retry e integração no relatório.
+
+### Prompt utilizado
+
+```
+Executar a Issue #66 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Ler issue, mover card In Progress
+3. Criar branch feature/issue-66-github-api-tool
+4. Implementar:
+   - fetch_repository_metadata() em repo_tools.py (GitHub REST API)
+   - parse_github_url() para extrair owner/repo
+   - RepositoryMetadata TypedDict (schema de saída)
+   - Tratamento: 404, 403, timeout, conexão + retry tenacity
+   - GITHUB_TOKEN opcional via env
+   - repository_metadata no AgentState
+   - Chamada em discover_docs (quando URL é GitHub)
+   - Seção "Informações do Repositório" no relatório
+   - Testes com mock (16 testes)
+5. Validar: pytest tests/ (183 passed)
+6. Commits semânticos + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-66-github-api-tool`
+- PR: #79
+- Alterados: repo_tools.py, state.py, discover_docs.py, build_report.py, report_service.py, graph.py, .env.example
+- Novo: tests/test_github_api_tool.py
+- Testes: 183 passando (16 novos + 167 existentes)
+- Tool funcional com validação, retry, schema, tratamento de erros
+- Issue #66: PR #79 criado
+
+
+## 28. Execução da Issue #67 — Implementar memória com checkpointer e histórico
+
+### Data
+
+2025-08-21
+
+### Contexto
+
+Issue #67 — O agente era stateless entre execuções. O critério 9 exige estratégia de memória que permita utilizar informações de interações anteriores.
+
+### Objetivo do Prompt
+
+Implementar memória persistente com SQLite + LangGraph MemorySaver, permitindo recuperar histórico de análises anteriores do mesmo repositório e incluir evolução no relatório.
+
+### Prompt utilizado
+
+```
+Executar a Issue #67 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Mover card In Progress
+3. Branch feature/issue-67-memoria-checkpointer
+4. Implementar:
+   - analysis_history.py: SQLite com save_analysis/get_history/generate_source_key
+   - LangGraph MemorySaver como checkpointer
+   - run_agent: recupera histórico antes, salva após execução
+   - AgentState com analysis_history
+   - Relatório com seção "Histórico" (evolução da nota)
+   - .gitignore com data/
+   - README documenta estratégia
+   - 13 testes (persistência, recuperação, relatório, E2E)
+5. Validar: pytest tests/ (196 passed)
+6. Commit + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-67-memoria-checkpointer`
+- PR: #80
+- Novo: `app/services/analysis_history.py`, `tests/test_analysis_history.py`
+- Alterados: graph.py, state.py, build_report.py, report_service.py, .gitignore, README.md, test_smoke.py
+- Testes: 196 passando (13 novos + 183 existentes)
+- Memória SQLite funcional com evolução de nota no relatório
+- Issue #67: PR #80 criado
+
+
+## 29. Execução da Issue #68 — Integrar automação low-code/no-code (n8n)
+
+### Data
+
+2025-08-21
+
+### Contexto
+
+Issue #68 — O projeto não possuía integração low-code/no-code. Critério 14 exige automação visual integrada com gatilho, integração e saída observável.
+
+### Objetivo do Prompt
+
+Implementar endpoint webhook /api/analyze + fluxo n8n exportado + instruções de reprodução no README.
+
+### Prompt utilizado
+
+```
+Executar a Issue #68 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Mover card In Progress
+3. Branch feature/issue-68-n8n-webhook-integration
+4. Implementar:
+   - app/api/webhook.py: POST /api/analyze com Pydantic schema
+   - app/main.py: flag --api para servidor webhook
+   - docs/evidencias/n8n_flow.json: fluxo n8n exportado
+   - requirements.txt: +fastapi +uvicorn
+   - README: instruções de reprodução
+   - 7 testes com TestClient
+5. Validar: pytest tests/ (203 passed)
+6. Commit + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-68-n8n-webhook-integration`
+- PR: #81
+- Novos: `app/api/webhook.py`, `docs/evidencias/n8n_flow.json`, `tests/test_webhook_api.py`
+- Alterados: `app/main.py`, `requirements.txt`, `README.md`
+- Testes: 203 passando (7 novos + 196 existentes)
+- Endpoint funcional + fluxo n8n + instruções de reprodução
+- Issue #68: PR #81 criado
+
+
+## 30. Execução da Issue #69 — Code review com IA e testes E2E com priorização por risco
+
+### Data
+
+2025-08-21
+
+### Contexto
+
+Issue #69 — Critério 12 exige evidência de QA com IA: code review de alteração real, testes E2E gerados com IA, e priorização por risco documentada.
+
+### Objetivo do Prompt
+
+Documentar code review com IA de PR real, criar testes E2E priorizados por risco, e documentar metodologia de priorização.
+
+### Prompt utilizado
+
+```
+Executar a Issue #69 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Mover card In Progress
+3. Branch feature/issue-69-qa-ia-e2e-priorizacao
+4. Implementar:
+   - docs/qa/code-review-ia.md: evidência de review do PR #78 com IA
+   - tests/test_e2e.py: 5 testes E2E (gerados com apoio de IA)
+   - docs/qa/priorizacao-risco.md: 10 cenários priorizados por criticidade
+5. Validar: pytest tests/ (208 passed)
+6. Commit + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-69-qa-ia-e2e-priorizacao`
+- PR: #82
+- Novos: `docs/qa/code-review-ia.md`, `docs/qa/priorizacao-risco.md`, `tests/test_e2e.py`
+- Testes: 208 passando (5 novos E2E + 203 existentes)
+- Code review documentado sobre PR #78 (real)
+- Priorização com metodologia Impacto × Probabilidade × Severidade
+- Issue #69: PR #82 criado
+
+
+## 31. Execução da Issue #70 — DevOps inteligente: análise de logs, anomalias e tendência
+
+### Data
+
+2025-08-24
+
+### Contexto
+
+Issue #70 — Critério 13 exige análise de logs com IA, detecção de anomalia, e estimativa de tendência/risco. Pipeline CI funcional (issue #61 implementada).
+
+### Objetivo do Prompt
+
+Analisar logs reais do CI com IA, identificar anomalia (falha recorrente de lint), e produzir estimativa de risco baseada em dados reais.
+
+### Prompt utilizado
+
+```
+Executar a Issue #70 seguindo issue-executor.md:
+1. Sincronizar develop
+2. Mover card In Progress
+3. Branch feature/issue-70-devops-analise-logs
+4. Buscar logs reais via gh run list e gh run view --log
+5. Criar:
+   - docs/evidencias/analise-logs-ia.md: explicação de 2 etapas (lint + testes)
+   - docs/evidencias/anomalia-detectada.md: falha recorrente de lint (3 runs)
+   - docs/evidencias/tendencia-risco.md: estimativa com dados reais (5 runs)
+6. Validar: pytest + ruff (208 passed, 0 errors)
+7. Commit + Push + PR
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-70-devops-analise-logs`
+- PR: #83
+- Novos: 3 documentos de evidência com dados reais do CI
+- Anomalia real: 3 runs consecutivas falharam por lint (E402, F541)
+- Tendência: taxa de falha 60% → <10% após correção
+- Testes: 208 passando, lint OK
+- Issue #70: PR #83 criado

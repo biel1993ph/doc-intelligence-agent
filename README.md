@@ -13,16 +13,53 @@ Um agente que avalia documentação técnica de software a partir de um reposit�
 
 ## Arquitetura
 
-O agente utiliza **LangGraph** para orquestrar um grafo de 7 nós sequenciais com roteamento condicional:
+O agente utiliza **LangGraph** para orquestrar um grafo com execução sequencial, roteamento condicional e paralelização:
 
 ```
-receive_input → validate_input → discover_docs → read_docs → analyze_docs → build_report → present_result
+receive_input → validate_input → discover_docs
+    → [read_readme, read_prd_docs]  (fan-out paralelo)
+    → merge_docs                     (fan-in / join)
+    → analyze_docs → build_report → present_result
 ```
 
 Roteamento condicional encerra o fluxo antecipadamente em caso de:
 - Validação inválida (URL malformada, caminho inexistente)
 - Nenhum documento descoberto
 - Contexto consolidado vazio
+
+## Memória e Histórico
+
+O agente utiliza **SQLite** para persistir o histórico de análises entre execuções:
+
+- Cada análise é salva com: repositório, data, nota, dimensões, quantidade de problemas/pontos fortes
+- Ao analisar um repositório já avaliado anteriormente, o relatório inclui seção "Histórico" com evolução da nota
+- Chave de agrupamento: hash MD5 da entrada normalizada (URL ou caminho)
+- Armazenamento: `data/analysis_history.db` (SQLite local, incluído no `.gitignore`)
+- LangGraph MemorySaver configurado como checkpointer
+
+## Integração Low-Code (n8n)
+
+O agente expõe uma API webhook para integração com ferramentas low-code (n8n, Make, Zapier):
+
+```bash
+# Iniciar API webhook (porta 8000)
+python3 -m app.main --api
+```
+
+**Endpoint:** `POST http://localhost:8000/api/analyze`
+
+```json
+{"url": "https://github.com/owner/repo"}
+```
+
+**Reprodução do fluxo n8n:**
+1. Instalar n8n: `docker run -it --rm -p 5678:5678 n8nio/n8n`
+2. Importar o fluxo: `docs/evidencias/n8n_flow.json`
+3. Configurar variável `DISCORD_WEBHOOK_URL` no n8n (se desejar notificação)
+4. Ativar o webhook trigger
+5. Enviar POST para o webhook do n8n com `{"url": "https://github.com/owner/repo"}`
+
+O fluxo n8n: Webhook Trigger → Chamar API de Análise → Notificar Discord + Responder.
 
 ## Estrutura do Projeto
 
