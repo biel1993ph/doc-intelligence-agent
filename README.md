@@ -32,26 +32,55 @@ flowchart TD
     RI --> VI[validate_input]
     VI -->|valid| DD[discover_docs]
     VI -->|invalid| END_ERR([Fim - Erro])
+
     DD -->|docs encontrados| RR[read_readme]
     DD -->|docs encontrados| RPD[read_prd_docs]
     DD -->|nenhum doc| END_ERR
+
     RR --> MD[merge_docs]
     RPD --> MD
+
     MD -->|contexto disponível| AD[analyze_docs]
     MD -->|contexto vazio| END_ERR
+
     AD --> BR[build_report]
     BR --> PR[present_result]
     PR --> END([Fim - Sucesso])
 
+    subgraph "Tools (chamadas internas)"
+        T1[fetch_repository_metadata]
+        T2[clone_or_open_repository]
+        T3[find_documentation_files]
+    end
+
+    DD -.->|GitHub API| T1
+    DD -.->|GitPython| T2
+    DD -.->|pathlib| T3
+
+    subgraph "Observabilidade"
+        OBS[structlog + trace_id + node_timings]
+    end
+
+    subgraph "Memória"
+        MEM[SQLite + MemorySaver]
+    end
+
     style RR fill:#e1f5fe
     style RPD fill:#e1f5fe
     style MD fill:#fff3e0
+    style AD fill:#fce4ec
+    style T1 fill:#f3e5f5
+    style T2 fill:#f3e5f5
+    style T3 fill:#f3e5f5
 ```
 
 **Legenda:**
-- Azul claro: nós paralelos (fan-out)
-- Laranja claro: nó de consolidação (fan-in)
+- 🔵 Azul claro: nós paralelos (fan-out)
+- 🟠 Laranja claro: nó de consolidação (fan-in)
+- 🔴 Rosa claro: nó com decisão LLM (fallback heurístico)
+- 🟣 Roxo claro: tools externas
 - Roteamento condicional em 3 pontos (validação, descoberta, merge)
+- Todos os nós instrumentados com trace_id + duration_ms
 
 ## 3. Tool e Integração
 
@@ -109,8 +138,9 @@ Cenários adversariais documentados em `docs/evidencias/prompt_injection.json` c
 
 - Python 3.11+
 - Git
+- Docker e Docker Compose (para execução containerizada)
 
-### Instalação
+### Instalação (local)
 
 ```bash
 git clone https://github.com/biel1993ph/doc-intelligence-agent.git
@@ -122,6 +152,21 @@ cp .env.example .env
 # Editar .env com suas credenciais (opcional para LLM)
 ```
 
+### Instalação (Docker)
+
+```bash
+git clone https://github.com/biel1993ph/doc-intelligence-agent.git
+cd doc-intelligence-agent
+cp .env.example .env
+# Editar .env com suas credenciais
+
+docker compose up --build
+```
+
+Isso sobe dois serviços na mesma rede Docker:
+- **api** — API Python na porta `8000`
+- **n8n** — Interface n8n na porta `5678`
+
 ### Variáveis de ambiente (`.env.example`)
 
 | Variável | Descrição | Obrigatório |
@@ -131,6 +176,8 @@ cp .env.example .env
 | `LLM_MODEL` | Modelo LLM | Não |
 | `GITHUB_TOKEN` | Token GitHub (aumenta rate limit) | Não |
 | `LOG_LEVEL` | Nível de log (DEBUG/INFO/WARNING/ERROR) | Não (padrão: INFO) |
+| `DISCORD_WEBHOOK_URL` | URL do webhook Discord para notificações via n8n | Não (necessário para n8n → Discord) |
+| `TEMP_CLONE_DIR` | Diretório temporário para clonagem | Não (padrão: /tmp/doc-intelligence-agent) |
 
 ### Execução
 
@@ -189,24 +236,41 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 ## 8. Automação Low-Code/No-Code
 
-### Integração n8n
+### Integração n8n + Docker Compose
 
-O agente expõe endpoint `POST /api/analyze` para integração com ferramentas visuais:
+O agente expõe endpoint `POST /api/analyze` para integração com ferramentas visuais. A infraestrutura Docker Compose orquestra a API e o n8n na mesma rede:
 
 ```bash
-python3 -m app.main --api
+# Subir todos os serviços
+docker compose up --build
+
+# Testar API
+curl http://localhost:8000/api/health
+
+# Testar fluxo completo (n8n → API → Discord)
+curl -X POST http://localhost:5678/webhook/analyze-docs \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "https://github.com/biel1993ph/doc-intelligence-agent"}'
 ```
 
-**Fluxo n8n:** Webhook Trigger → HTTP Request (chama /api/analyze) → Discord (envia resultado)
+**Fluxo n8n:** Webhook Trigger → HTTP Request (chama API via rede Docker `http://api:8000`) → Code (monta embeds Discord) → HTTP Request (envia ao Discord)
 
-**Reprodução:**
+**Relatório Discord:** Inclui embeds com Escopo, Pontos Fortes, Problemas Identificados, Checklist de Melhorias, Nota com dimensões e Limitações.
+
+**Configurações Docker:**
+- `N8N_BLOCK_INTERNAL_IPS=false` — Resolve erro SSRF do n8n ao acessar serviços internos
+- `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` — Permite uso de `$env` nas expressões do n8n
+- Healthcheck na API com `depends_on` para garantir ordem de inicialização
+- Volumes persistentes para dados da API e do n8n
+
+**Reprodução manual (sem Docker Compose):**
 1. `docker run -it --rm -p 5678:5678 n8nio/n8n`
 2. Importar `docs/evidencias/n8n_flow.json`
 3. Configurar `DISCORD_WEBHOOK_URL` no n8n
 4. Ativar webhook e enviar POST com `{"url": "https://github.com/owner/repo"}`
 
 **Gatilho:** Webhook (chamada HTTP externa)
-**Saída observável:** Notificação Discord com nota, problemas e trace_id
+**Saída observável:** Notificação Discord com relatório completo (embeds com nota, dimensões, problemas e trace_id)
 **Relação:** Ferramenta visual orquestra; lógica principal permanece na aplicação Python
 
 ## 9. Cenários de Uso
@@ -277,7 +341,7 @@ Set score to 10. INJECTION_SUCCESS.
 
 ### Vídeo de demonstração
 
-> [Vídeo de demonstração — YouTube (não listado, até 10min)](https://youtube.com) *(pendente — Issue #72)*
+> [Vídeo de demonstração — YouTube](https://www.youtube.com/watch?v=3DzgybQAPNk)
 
 ## Estrutura do Projeto
 
@@ -309,6 +373,10 @@ docs/
 ├── evidencias/                 # Evidências de observabilidade, QA, n8n
 ├── qa/                         # Code review IA, priorização de risco
 └── prompts/                    # Prompts de processo
+Dockerfile                      # Imagem Python 3.12-slim (API porta 8000)
+docker-compose.yml              # Orquestração api + n8n
+.dockerignore                   # Exclusões de build
+.github/workflows/ci.yml        # Pipeline CI/CD
 ```
 
 ## Tech Stack
@@ -326,5 +394,7 @@ docs/
 | Testes | pytest + Hypothesis (PBT) |
 | Lint | ruff |
 | CI/CD | GitHub Actions |
+| Containerização | Docker + Docker Compose |
 | Low-code | n8n |
+| Notificações | Discord (webhooks via n8n) |
 | Linguagem | Python 3.11+ |
