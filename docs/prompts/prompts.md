@@ -1000,3 +1000,64 @@ Executar a Issue #70 seguindo issue-executor.md:
 - Tendência: taxa de falha 60% → <10% após correção
 - Testes: 208 passando, lint OK
 - Issue #70: PR #83 criado
+
+
+## 32. Execução da Issue #71 — Expandir README com documentação completa
+
+### Data
+
+2025-08-24
+
+### Contexto
+
+Issue #71 — README precisa das 10 seções obrigatórias do projeto avaliativo (critério 5).
+
+### Objetivo do Prompt
+
+Expandir README.md com todas as seções: descrição, classificação+diagrama Mermaid, tool, memória, segurança, instalação, QA/observabilidade/DevOps, low-code, cenários de uso, análise crítica.
+
+### Prompt utilizado
+
+```
+Executar Issue #71: expandir README com 10 seções obrigatórias, diagrama Mermaid, 2 cenários (fluxo principal + prompt injection), análise crítica com refinamento documentado, limitações e melhorias futuras.
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-71-readme-completo`
+- PR: #84
+- README expandido: 256 linhas adicionadas, 10 seções completas
+- Diagrama Mermaid do fluxo LangGraph com fan-out/fan-in
+- 2 cenários documentados (entrada → comportamento → resultado)
+- Testes: 208 passed, lint OK
+
+
+## 32. Execução da Issue #85 — Docker Compose + n8n integration com relatório Discord
+
+### Data
+
+2026-08-25
+
+### Contexto
+
+Issue #85 — Implementação da infraestrutura Docker Compose para rodar a API Python + n8n localmente, com integração completa de relatório no Discord via webhooks.
+
+### Objetivo do Prompt
+
+Executar a Issue #85 seguindo o fluxo issue-executor.md: identificar, analisar, implementar, validar, commitar e criar PR com Docker Compose + n8n + Discord reporting.
+
+### Prompt utilizado
+
+```
+Execute a Issue para ISSUE_NUMBER=85 seguindo integralmente as instruções definidas em docs/prompts/issue-executor.md
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-85-docker-compose-n8n`
+- PR: #86
+- Novos arquivos: `Dockerfile`, `docker-compose.yml`, `.dockerignore`
+- Alterados: `.env.example` (DISCORD_WEBHOOK_URL), `docs/evidencias/n8n_flow.json` (workflow atualizado)
+- Validações: docker compose config OK, docker build --check OK, JSON válido, estrutura validada programaticamente
+- Testes: ✅ PASS (sintaxe Docker, compose config, n8n flow structure)
+- Issue #85: PR #86 criado direcionado para develop

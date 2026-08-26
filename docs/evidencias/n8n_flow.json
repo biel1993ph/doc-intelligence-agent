@@ -18,7 +18,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:8000/api/analyze",
+        "url": "http://api:8000/api/analyze",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -32,7 +32,12 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ \"url\": $json.body.url }) }}",
         "options": {
-          "timeout": 120000
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
         }
       },
       "id": "http-request",
@@ -47,7 +52,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "conditions": [
             {
@@ -72,27 +77,51 @@
     },
     {
       "parameters": {
-        "webhookUrl": "={{$env.DISCORD_WEBHOOK_URL}}",
-        "text": "=📊 **Análise de Documentação Concluída**\n\n📁 Repositório: {{ $('Webhook Trigger').item.json.body.url }}\n⭐ Nota: **{{ $json.score }}/10**\n📋 Pontos fortes: {{ $json.strengths_count }}\n⚠️ Problemas: {{ $json.issues_count }}\n🔗 Trace ID: {{ $json.trace_id }}\n\n---\n_Análise realizada pelo Doc Intelligence Agent_",
-        "options": {}
+        "jsCode": "const data = $input.first().json;\nconst repoUrl = $('Webhook Trigger').first().json.body.url;\n\n// Cor do embed baseada na nota\nlet color = 15548997; // vermelho\nif (data.score >= 8) color = 5763719;  // verde\nelse if (data.score >= 5) color = 16776960; // amarelo\n\n// Extrair seções do relatório Markdown\nlet escopo = '';\nlet pontosFortes = '';\nlet problemas = '';\nlet checklist = '';\nlet nota = '';\nlet limitacoes = '';\n\nif (data.report) {\n  // Escopo\n  const escopoMatch = data.report.match(/## Escopo\\n([\\s\\S]*?)(?=\\n## )/);\n  if (escopoMatch) {\n    escopo = escopoMatch[1].trim().substring(0, 1024);\n  }\n\n  // Pontos Fortes\n  const forteMatch = data.report.match(/## Pontos Fortes\\n([\\s\\S]*?)(?=\\n## )/);\n  if (forteMatch) {\n    pontosFortes = forteMatch[1].trim().substring(0, 1024);\n  }\n\n  // Problemas Identificados\n  const probMatch = data.report.match(/## Problemas Identificados\\n([\\s\\S]*?)(?=\\n## )/);\n  if (probMatch) {\n    problemas = probMatch[1].trim().substring(0, 1024);\n  }\n\n  // Checklist de Melhorias\n  const checkMatch = data.report.match(/## Checklist de Melhorias\\n([\\s\\S]*?)(?=\\n## )/);\n  if (checkMatch) {\n    checklist = checkMatch[1].trim().substring(0, 1024);\n  }\n\n  // Nota (inclui justificativa)\n  const notaMatch = data.report.match(/## Nota\\n([\\s\\S]*?)(?=\\n## )/);\n  if (notaMatch) {\n    nota = notaMatch[1].trim().substring(0, 1024);\n  }\n\n  // Limitações (última seção, pode não ter ## depois)\n  const limMatch = data.report.match(/## Limitações\\n([\\s\\S]*?)$/);\n  if (limMatch) {\n    limitacoes = limMatch[1].trim().substring(0, 1024);\n  }\n}\n\n// Montar dimensões como tabela formatada\nlet dimensionsText = '';\nif (data.dimensions && typeof data.dimensions === 'object') {\n  dimensionsText = Object.entries(data.dimensions)\n    .map(([k, v]) => `**${k.charAt(0).toUpperCase() + k.slice(1)}:** ${v}`)\n    .join('\\n');\n}\n\n// Montar embeds (Discord aceita até 10 embeds por mensagem)\nconst embeds = [];\n\n// Embed 1: Resumo + Escopo\nembeds.push({\n  title: '📄 Relatório de Análise de Documentação',\n  url: repoUrl,\n  color: color,\n  description: `Análise completa da documentação do projeto.\\n\\n📁 **Repositório:** ${repoUrl}`,\n  fields: [\n    { name: '📂 Escopo', value: escopo || 'N/A', inline: false }\n  ]\n});\n\n// Embed 2: Pontos Fortes\nif (pontosFortes) {\n  embeds.push({\n    title: '✅ Pontos Fortes',\n    color: 5763719,\n    description: pontosFortes\n  });\n}\n\n// Embed 3: Problemas Identificados\nif (problemas) {\n  embeds.push({\n    title: '⚠️ Problemas Identificados',\n    color: 16776960,\n    description: problemas\n  });\n}\n\n// Embed 4: Checklist de Melhorias\nif (checklist) {\n  embeds.push({\n    title: '📝 Checklist de Melhorias',\n    color: 3447003,\n    description: checklist\n  });\n}\n\n// Embed 5: Nota + Dimensões\nconst notaFields = [\n  { name: '⭐ Nota', value: `**${data.score}/10**`, inline: true },\n  { name: '📋 Pontos Fortes', value: String(data.strengths_count), inline: true },\n  { name: '⚠️ Problemas', value: String(data.issues_count), inline: true }\n];\nif (dimensionsText) {\n  notaFields.push({ name: '📊 Dimensões', value: dimensionsText, inline: false });\n}\nconst notaEmbed = {\n  title: '🏆 Nota',\n  color: color,\n  fields: notaFields\n};\nif (nota) {\n  // Pegar apenas a justificativa (remover a nota numérica que já está nos fields)\n  const justificativa = nota.replace(/\\*\\*\\d+\\/10\\*\\*\\n?/, '').trim();\n  if (justificativa) {\n    notaEmbed.description = justificativa.substring(0, 2048);\n  }\n}\nembeds.push(notaEmbed);\n\n// Embed 6: Limitações\nif (limitacoes) {\n  embeds.push({\n    title: '⚙️ Limitações',\n    color: 9807270,\n    description: limitacoes\n  });\n}\n\n// Footer no último embed\nembeds[embeds.length - 1].footer = {\n  text: `Doc Intelligence Agent | Trace: ${data.trace_id}`\n};\nembeds[embeds.length - 1].timestamp = new Date().toISOString();\n\nreturn [{ json: { embeds } }];"
       },
-      "id": "discord-notify",
-      "name": "Notificar Discord",
-      "type": "n8n-nodes-base.discord",
+      "id": "code-build-discord",
+      "name": "Montar Relatório Discord",
+      "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [960, 200]
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "={{$env.DISCORD_WEBHOOK_URL}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ embeds: $json.embeds }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "discord-notify",
+      "name": "Notificar Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ \"status\": \"notified\", \"score\": $json.score, \"trace_id\": $json.trace_id }) }}",
+        "responseBody": "={{ JSON.stringify({ \"status\": \"notified\", \"score\": $('Chamar API de Análise').first().json.score, \"trace_id\": $('Chamar API de Análise').first().json.trace_id }) }}",
         "options": {}
       },
       "id": "respond-success",
       "name": "Responder Sucesso",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [960, 400]
+      "position": [1200, 400]
     },
     {
       "parameters": {
@@ -123,12 +152,17 @@
     "Análise com sucesso?": {
       "main": [
         [
-          {"node": "Notificar Discord", "type": "main", "index": 0},
+          {"node": "Montar Relatório Discord", "type": "main", "index": 0},
           {"node": "Responder Sucesso", "type": "main", "index": 0}
         ],
         [
           {"node": "Responder Erro", "type": "main", "index": 0}
         ]
+      ]
+    },
+    "Montar Relatório Discord": {
+      "main": [
+        [{"node": "Notificar Discord", "type": "main", "index": 0}]
       ]
     }
   },
@@ -136,7 +170,7 @@
     "executionOrder": "v1"
   },
   "meta": {
-    "description": "Fluxo n8n para integração com Doc Intelligence Agent. Recebe URL via webhook, chama API de análise, notifica Discord com resultado.",
+    "description": "Fluxo n8n para integração com Doc Intelligence Agent. Recebe URL via webhook, chama API de análise, envia relatório completo ao Discord com embeds.",
     "templateCredsSetupCompleted": true
   }
 }
