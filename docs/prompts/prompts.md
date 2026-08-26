@@ -1030,3 +1030,34 @@ Executar Issue #71: expandir README com 10 seções obrigatórias, diagrama Merm
 - Diagrama Mermaid do fluxo LangGraph com fan-out/fan-in
 - 2 cenários documentados (entrada → comportamento → resultado)
 - Testes: 208 passed, lint OK
+
+
+## 32. Execução da Issue #85 — Docker Compose + n8n integration com relatório Discord
+
+### Data
+
+2026-08-25
+
+### Contexto
+
+Issue #85 — Implementação da infraestrutura Docker Compose para rodar a API Python + n8n localmente, com integração completa de relatório no Discord via webhooks.
+
+### Objetivo do Prompt
+
+Executar a Issue #85 seguindo o fluxo issue-executor.md: identificar, analisar, implementar, validar, commitar e criar PR com Docker Compose + n8n + Discord reporting.
+
+### Prompt utilizado
+
+```
+Execute a Issue para ISSUE_NUMBER=85 seguindo integralmente as instruções definidas em docs/prompts/issue-executor.md
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-85-docker-compose-n8n`
+- PR: #86
+- Novos arquivos: `Dockerfile`, `docker-compose.yml`, `.dockerignore`
+- Alterados: `.env.example` (DISCORD_WEBHOOK_URL), `docs/evidencias/n8n_flow.json` (workflow atualizado)
+- Validações: docker compose config OK, docker build --check OK, JSON válido, estrutura validada programaticamente
+- Testes: ✅ PASS (sintaxe Docker, compose config, n8n flow structure)
+- Issue #85: PR #86 criado direcionado para develop
