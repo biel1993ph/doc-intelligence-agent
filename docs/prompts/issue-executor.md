@@ -55,7 +55,7 @@ Não utilizar uma Issue fixa no prompt.
 
 ## Repositório
 
-https://github.com/biel1993ph/docreview-agent
+https://github.com/biel1993ph/doc-intelligence-agent
 
 ## GitHub Project
 
@@ -132,7 +132,7 @@ Utilize:
 
 ```bash
 gh issue view ISSUE_NUMBER \
-  --repo biel1993ph/docreview-agent
+  --repo biel1993ph/doc-intelligence-agent
 ```
 
 Obtenha:
@@ -563,7 +563,7 @@ Exemplo:
 
 ```bash
 gh pr create \
-  --repo biel1993ph/docreview-agent \
+  --repo biel1993ph/doc-intelligence-agent \
   --base develop \
   --head feature/issue-ISSUE_NUMBER-descricao-curta \
   --title "feat: descrição da alteração" \
@@ -625,7 +625,7 @@ Após criar o PR, obtenha:
 
 ```bash
 gh pr view <PR_NUMBER> \
-  --repo biel1993ph/docreview-agent
+  --repo biel1993ph/doc-intelligence-agent
 ```
 
 Verifique:

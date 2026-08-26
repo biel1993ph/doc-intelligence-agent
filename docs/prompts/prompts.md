@@ -1061,3 +1061,32 @@ Execute a Issue para ISSUE_NUMBER=85 seguindo integralmente as instruções defi
 - Validações: docker compose config OK, docker build --check OK, JSON válido, estrutura validada programaticamente
 - Testes: ✅ PASS (sintaxe Docker, compose config, n8n flow structure)
 - Issue #85: PR #86 criado direcionado para develop
+
+
+## 33. Execução da Issue #72 — Vídeo de demonstração (link no README)
+
+### Data
+
+2025-08-25
+
+### Contexto
+
+Issue #72 — O projeto avaliativo exige vídeo de demonstração publicado no YouTube (não listado, até 10min). O vídeo já foi gravado. A Issue exige que o link seja inserido no README.md.
+
+### Objetivo do Prompt
+
+Executar a Issue #72 inserindo o link do vídeo de demonstração no README.md, seguindo o fluxo GitFlow completo.
+
+### Prompt utilizado
+
+```
+Execute a Issue para ISSUE_NUMBER=72 seguindo integralmente as instruções definidas em docs/prompts/issue-executor.md. link do Vídeo de demonstração https://www.youtube.com/watch?v=3DzgybQAPNk. Realizei alterações no Readme e issue-executor.md
+```
+
+### Resultado obtido
+
+- Branch: `feature/issue-72-video-demonstracao`
+- PR: #87
+- Arquivos alterados: `README.md` (link do vídeo atualizado), `docs/prompts/issue-executor.md` (correção nome do repo)
+- Testes: ✅ PASS (verificação manual — link presente no README)
+- Issue #72: PR #87 criado direcionado para develop
