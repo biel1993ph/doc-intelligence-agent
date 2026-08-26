@@ -1,0 +1,45 @@
+services:
+  api:
+    build: .
+    container_name: doc-intelligence-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - TEMP_CLONE_DIR=/tmp/doc-intelligence-agent
+    volumes:
+      - api-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - doc-intel-network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: doc-intelligence-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BLOCK_INTERNAL_IPS=false
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - WEBHOOK_URL=http://localhost:5678
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+    volumes:
+      - n8n-data:/home/node/.n8n
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - doc-intel-network
+
+volumes:
+  api-data:
+  n8n-data:
+
+networks:
+  doc-intel-network:
+    driver: bridge

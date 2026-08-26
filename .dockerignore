@@ -1,0 +1,16 @@
+.git
+.github
+.hypothesis
+.pytest_cache
+.ruff_cache
+.vscode
+.kiro
+.env
+__pycache__
+*.pyc
+*.pyo
+venv
+.venv
+data/
+docs/evidencias/
+.DS_Store
